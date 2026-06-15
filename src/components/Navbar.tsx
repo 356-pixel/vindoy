@@ -25,10 +25,10 @@ export default function Navbar() {
           className="flex items-center gap-2 font-semibold tracking-tight text-foreground"
           onClick={() => setOpen(false)}
         >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-gradient-primary text-primary-foreground shadow-sm">
             <BookOpen className="h-4 w-4" aria-hidden />
           </span>
-          <span className="text-lg">Vindoy</span>
+          <span className="text-lg text-gradient-primary font-bold">Vindoy</span>
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
