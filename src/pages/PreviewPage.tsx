@@ -86,14 +86,32 @@ export default function PreviewPage() {
             <path d="M108 96 L 94 106 L 104 116" />
           </svg>
 
-          <a
-            href={preview.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="relative inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
-          >
-            View Here
-          </a>
+          <div className="relative inline-flex items-center">
+            <a
+              href={preview.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="relative inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
+            >
+              View Here
+            </a>
+            {/* Bold curved arrow sitting just to the right of the button, pointing at it */}
+            <svg
+              aria-hidden
+              viewBox="0 0 120 80"
+              className="pointer-events-none absolute -right-24 top-1/2 hidden h-16 w-24 -translate-y-1/2 text-primary sm:block"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* Curves from the right side, sweeping back toward the button on the left */}
+              <path d="M110 14 C 90 6, 50 14, 22 40" />
+              {/* Arrowhead pointing left at the button */}
+              <path d="M34 28 L 18 42 L 34 52" />
+            </svg>
+          </div>
         </div>
 
         {/* Article body */}
