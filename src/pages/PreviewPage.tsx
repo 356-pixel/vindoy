@@ -67,29 +67,34 @@ export default function PreviewPage() {
           className="block w-full rounded-xl"
         />
 
-        {/* View Here CTA with curved arrow from the right */}
-        <div className="relative mt-6 flex justify-center">
+        {/* View Here CTA with curved arrow whose tail starts from the image */}
+        <div className="relative mt-8 flex justify-center">
+          {/* Arrow: tail near bottom-right of the image above, head pointing at the button */}
+          <svg
+            aria-hidden
+            viewBox="0 0 200 140"
+            className="pointer-events-none absolute right-2 hidden h-32 w-44 text-primary sm:block"
+            style={{ top: "-110px" }}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {/* Curve from upper-right (image area) down-left to the button */}
+            <path d="M188 8 C 180 60, 150 95, 110 120" />
+            {/* Arrowhead pointing toward the button (down-left) */}
+            <path d="M118 108 L 108 122 L 124 126" />
+          </svg>
+
           <a
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            className="relative inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
           >
             View Here
           </a>
-          <svg
-            aria-hidden
-            viewBox="0 0 120 70"
-            className="pointer-events-none absolute right-2 top-1/2 hidden h-16 w-28 -translate-y-1/2 translate-x-full text-primary sm:block"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M115 12 C 95 5, 55 5, 30 35 C 22 45, 18 55, 18 60" />
-            <path d="M10 56 L 18 62 L 26 54" />
-          </svg>
         </div>
 
         {/* Article body */}
