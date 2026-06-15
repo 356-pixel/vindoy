@@ -1,16 +1,28 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
-import { Preview, getPreview } from "@/lib/storage";
-import { ExternalLink, Calendar, ArrowLeft } from "lucide-react";
+import ArticleRenderer from "@/components/ArticleRenderer";
+import { detectCountry } from "@/lib/country";
+import { getPreviewDoc } from "@/lib/previewsApi";
+import type { PreviewDoc } from "@/lib/articleTypes";
 
 export default function PreviewPage() {
   const { slug = "" } = useParams();
-  const [preview, setPreview] = useState<Preview | undefined | null>(undefined);
+  const [preview, setPreview] = useState<PreviewDoc | undefined | null>(undefined);
+  const [country, setCountry] = useState<string>("");
 
   useEffect(() => {
-    setPreview(getPreview(slug) || null);
+    let cancelled = false;
+    (async () => {
+      const [doc, c] = await Promise.all([getPreviewDoc(slug), detectCountry()]);
+      if (cancelled) return;
+      setPreview(doc);
+      setCountry(c);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   if (preview === undefined) {
@@ -30,70 +42,59 @@ export default function PreviewPage() {
         <div className="container py-24 text-center">
           <h1 className="text-3xl font-bold">Preview not found</h1>
           <p className="mt-2 text-muted-foreground">
-            This link doesn't exist or was created on a different device.
+            This link doesn't exist or has been removed.
           </p>
-          <Link
-            to="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back home
-          </Link>
         </div>
       </Layout>
     );
   }
 
+  const article =
+    (country && preview.countries?.[country]) || preview.default;
+
   return (
     <Layout>
       <SEO
-        title={`${preview.title} · Vindoy`}
-        description={preview.content.slice(0, 155)}
+        title={`${article.title || "Article preview"} · Vindoy`}
+        description={(article.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.slice(0, 155) ?? ""}
       />
-      <article className="container max-w-3xl py-10">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Home
-        </Link>
+      <article className="container max-w-3xl py-8 sm:py-12">
+        {/* Borderless image, no nav buttons above */}
+        <img
+          src={preview.image}
+          alt={article.title || "Article preview"}
+          loading="lazy"
+          className="block w-full rounded-xl"
+        />
 
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <img
-            src={preview.image}
-            alt={preview.title}
-            loading="lazy"
-            className="aspect-[16/9] w-full object-cover"
-          />
-          <div className="p-6 sm:p-8">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {new Date(preview.createdAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </div>
-            <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              {preview.title}
-            </h1>
-            <div className="prose-base mt-6 whitespace-pre-wrap text-[15px] leading-7 text-foreground/90">
-              {preview.content}
-            </div>
+        {/* View Here CTA with curved arrow from the right */}
+        <div className="relative mt-6 flex justify-center">
+          <a
+            href={preview.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            View Here
+          </a>
+          <svg
+            aria-hidden
+            viewBox="0 0 120 70"
+            className="pointer-events-none absolute right-2 top-1/2 hidden h-16 w-28 -translate-y-1/2 translate-x-full text-primary sm:block"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M115 12 C 95 5, 55 5, 30 35 C 22 45, 18 55, 18 60" />
+            <path d="M10 56 L 18 62 L 26 54" />
+          </svg>
+        </div>
 
-            <a
-              href={preview.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 sm:w-auto"
-            >
-              Read Complete Article
-              <ExternalLink className="h-4 w-4" />
-            </a>
-            <p className="mt-3 text-xs text-muted-foreground">
-              You'll be taken to {new URL(preview.sourceUrl).hostname} in a new
-              tab.
-            </p>
-          </div>
+        {/* Article body */}
+        <div className="mt-10">
+          <ArticleRenderer article={article} />
         </div>
       </article>
     </Layout>

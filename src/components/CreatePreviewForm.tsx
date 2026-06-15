@@ -1,8 +1,19 @@
 import { useCallback, useRef, useState } from "react";
-import { Upload, Loader2, Link as LinkIcon, Copy, Check, ImageIcon } from "lucide-react";
+import { Upload, Loader2, Link as LinkIcon, Copy, Check, X } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
-import { generateSlug, isValidUrl, savePreview } from "@/lib/storage";
 import { toast } from "sonner";
+import { createPreview, generateSlug } from "@/lib/previewsApi";
+import { placeholderDefaultArticle } from "@/lib/articleTypes";
+import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
+
+function isValidUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export default function CreatePreviewForm() {
   const [image, setImage] = useState<string>("");
@@ -11,6 +22,7 @@ export default function CreatePreviewForm() {
   const [dragOver, setDragOver] = useState(false);
 
   const [sourceUrl, setSourceUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [generated, setGenerated] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
@@ -33,31 +45,38 @@ export default function CreatePreviewForm() {
     }
   }, []);
 
-  function onSubmit(e: React.FormEvent) {
+  function clearImage(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    setImage("");
+    setImageName("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!image) return toast.error("Please add a thumbnail image");
     if (!isValidUrl(sourceUrl)) return toast.error("Enter a valid http(s) URL");
 
-    let title = "Shared article";
+    setSubmitting(true);
     try {
-      title = new URL(sourceUrl).hostname.replace(/^www\./, "");
-    } catch {
-      // ignore
+      const slug = generateSlug(6);
+      await createPreview({
+        slug,
+        sourceUrl: sourceUrl.trim(),
+        image,
+        createdAt: new Date().toISOString(),
+        default: placeholderDefaultArticle(sourceUrl.trim()),
+      });
+      const url = `${SHAREABLE_DOMAIN}/${slug}`;
+      setGenerated(url);
+      setCopied(false);
+      toast.success("Preview link created");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not save preview. Try again.");
+    } finally {
+      setSubmitting(false);
     }
-
-    const slug = generateSlug();
-    savePreview({
-      slug,
-      title,
-      sourceUrl: sourceUrl.trim(),
-      content: "",
-      image,
-      createdAt: new Date().toISOString(),
-    });
-    const url = `${window.location.origin}/${slug}`;
-    setGenerated(url);
-    setCopied(false);
-    toast.success("Preview link created");
   }
 
   async function copyLink() {
@@ -95,13 +114,17 @@ export default function CreatePreviewForm() {
               const f = e.dataTransfer.files?.[0];
               if (f) handleFile(f);
             }}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => !image && fileRef.current?.click()}
             role="button"
             tabIndex={0}
             onKeyDown={(e) =>
-              (e.key === "Enter" || e.key === " ") && fileRef.current?.click()
+              !image &&
+              (e.key === "Enter" || e.key === " ") &&
+              fileRef.current?.click()
             }
-            className={`flex min-h-[110px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
+            className={`relative flex min-h-[110px] ${
+              image ? "cursor-default" : "cursor-pointer"
+            } flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
               dragOver
                 ? "border-primary bg-primary/5"
                 : "border-border bg-secondary/30 hover:bg-secondary/60"
@@ -110,18 +133,33 @@ export default function CreatePreviewForm() {
             {compressing ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing image…
+                Compressing to under 40KB…
               </div>
             ) : image ? (
-              <div className="flex flex-col items-center gap-2">
+              <div className="relative flex w-full flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  aria-label="Remove image"
+                  className="absolute right-0 top-0 grid h-8 w-8 place-items-center rounded-full bg-background/95 text-foreground shadow-sm ring-1 ring-border hover:bg-secondary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
                 <img
                   src={image}
                   alt="Thumbnail preview"
-                  className="max-h-32 rounded-md object-contain"
+                  className="max-h-40 rounded-md object-contain"
                 />
-                <span className="text-xs text-muted-foreground">
-                  {imageName || "thumbnail.jpg"} · click to replace
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileRef.current?.click();
+                  }}
+                  className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                >
+                  {imageName || "thumbnail.jpg"} · replace
+                </button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1.5 text-sm text-muted-foreground">
@@ -132,6 +170,7 @@ export default function CreatePreviewForm() {
                   </span>{" "}
                   or click to upload
                 </span>
+                <span className="text-xs">Auto-compressed to ~40KB</span>
               </div>
             )}
             <input
@@ -165,11 +204,15 @@ export default function CreatePreviewForm() {
 
         <button
           type="submit"
-          disabled={compressing}
+          disabled={compressing || submitting}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          <LinkIcon className="h-4 w-4" />
-          Generate Preview Link
+          {submitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LinkIcon className="h-4 w-4" />
+          )}
+          {submitting ? "Creating…" : "Generate Preview Link"}
         </button>
 
         {generated && (
