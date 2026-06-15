@@ -13,7 +13,7 @@ export default function Home() {
       {/* Hero + Form */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,hsl(var(--primary)/0.10),transparent_70%)]" />
-        <div className="container max-w-3xl py-12 sm:py-16">
+        <div className="container max-w-xl py-12 sm:py-16">
           <div className="text-center">
             <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">
               Share articles preview

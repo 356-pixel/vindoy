@@ -4,8 +4,8 @@ import { Menu, X, BookOpen } from "lucide-react";
 
 const links = [
   { to: "/", label: "Home" },
-  { to: "/blogs", label: "Blogs" },
   { to: "/about", label: "About Us" },
+  { to: "/blogs", label: "Blogs" },
   { to: "/contact", label: "Contact Us" },
   { to: "/privacy", label: "Privacy Policy" },
 ];
