@@ -26,7 +26,7 @@ export default function PreviewPage() {
   if (preview === null) {
     return (
       <Layout>
-        <SEO title="Preview not found · ArticlePreview" />
+        <SEO title="Preview not found · Vindoy" />
         <div className="container py-24 text-center">
           <h1 className="text-3xl font-bold">Preview not found</h1>
           <p className="mt-2 text-muted-foreground">
@@ -46,7 +46,7 @@ export default function PreviewPage() {
   return (
     <Layout>
       <SEO
-        title={`${preview.title} · ArticlePreview`}
+        title={`${preview.title} · Vindoy`}
         description={preview.content.slice(0, 155)}
       />
       <article className="container max-w-3xl py-10">

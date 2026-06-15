@@ -5,7 +5,7 @@ import SEO from "@/components/SEO";
 export default function NotFound() {
   return (
     <Layout>
-      <SEO title="Page not found · ArticlePreview" />
+      <SEO title="Page not found · Vindoy" />
       <section className="container py-24 text-center">
         <p className="text-sm font-semibold uppercase tracking-wider text-primary">
           404

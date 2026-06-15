@@ -5,8 +5,8 @@ export default function Privacy() {
   return (
     <Layout>
       <SEO
-        title="Privacy Policy · ArticlePreview"
-        description="How ArticlePreview handles data, cookies, user-generated content, and external links."
+        title="Privacy Policy · Vindoy"
+        description="How Vindoy handles data, cookies, user-generated content, and external links."
       />
       <section className="container max-w-3xl py-12">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -20,7 +20,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold">Data we collect</h2>
             <p className="mt-2">
-              ArticlePreview is designed to collect as little personal data as
+              Vindoy is designed to collect as little personal data as
               possible. Previews you create are stored locally in your browser
               by default. If you contact us, we keep the information you send
               only as long as needed to respond.
@@ -38,7 +38,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold">User-generated content</h2>
             <p className="mt-2">
-              Previews, titles, and images submitted through ArticlePreview are
+              Previews, titles, and images submitted through Vindoy are
               your responsibility. By submitting content you confirm you have
               the right to share it and that it doesn't infringe copyright,
               violate privacy, or include illegal material. We may remove

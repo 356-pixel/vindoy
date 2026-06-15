@@ -9,7 +9,7 @@ export default function Blogs() {
   return (
     <Layout>
       <SEO
-        title="Blogs · ArticlePreview"
+        title="Blogs · Vindoy"
         description="Short reads on AI, startups, finance, productivity, climate, security, marketing, health, and learning."
       />
       <section className="container py-12">

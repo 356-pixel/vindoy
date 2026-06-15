@@ -1,16 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Preview, getAllPreviews } from "@/lib/storage";
-import { Clock } from "lucide-react";
+import { BLOGS } from "@/lib/blogs";
+import { ArrowRight } from "lucide-react";
 
 export default function FeaturedPreviews() {
-  const [items, setItems] = useState<Preview[]>([]);
-  useEffect(() => setItems(getAllPreviews().slice(0, 6)), []);
-
-  if (!items.length) return null;
+  const items = BLOGS.slice(0, 6);
 
   return (
-    <section className="container mt-20" aria-labelledby="featured-title">
+    <section className="container mt-16" aria-labelledby="featured-title">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h2
@@ -20,15 +16,21 @@ export default function FeaturedPreviews() {
             Featured previews
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Recently shared by the community.
+            Handpicked reads from across the web.
           </p>
         </div>
+        <Link
+          to="/blogs"
+          className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:inline-flex"
+        >
+          View all <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((p) => (
           <Link
-            key={p.slug}
-            to={`/${p.slug}`}
+            key={p.id}
+            to="/blogs"
             className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="aspect-[16/9] w-full overflow-hidden bg-secondary">
@@ -40,16 +42,15 @@ export default function FeaturedPreviews() {
               />
             </div>
             <div className="p-4">
-              <h3 className="line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
+              <span className="text-xs font-medium uppercase tracking-wide text-primary">
+                {p.category}
+              </span>
+              <h3 className="mt-1.5 line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">
                 {p.title}
               </h3>
               <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-                {p.content}
+                {p.excerpt}
               </p>
-              <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {new Date(p.createdAt).toLocaleDateString()}
-              </div>
             </div>
           </Link>
         ))}

@@ -5,12 +5,12 @@ export default function About() {
   return (
     <Layout>
       <SEO
-        title="About · ArticlePreview"
-        description="ArticlePreview helps readers discover useful content quickly while sending qualified traffic to original publishers."
+        title="About · Vindoy"
+        description="Vindoy helps readers discover useful content quickly while sending qualified traffic to original publishers."
       />
       <section className="container max-w-3xl py-12">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          About ArticlePreview
+          About Vindoy
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           We believe great writing deserves to be found, and readers deserve a
@@ -19,10 +19,10 @@ export default function About() {
 
         <div className="mt-8 space-y-6 text-[15px] leading-7">
           <p>
-            ArticlePreview is a lightweight platform where anyone can share a
-            short summary of an article along with a link to the original
-            source. Instead of full reposts, we focus on previews: just enough
-            context for readers to know if a piece is relevant to them.
+            Vindoy is a lightweight platform where anyone can share a short
+            preview of an article along with a link to the original source.
+            Instead of full reposts, we focus on previews: just enough context
+            for readers to know if a piece is relevant to them.
           </p>
           <p>
             <strong>For readers</strong>, that means discovering useful content
