@@ -391,7 +391,7 @@ function PreviewEditor({
           countryLabel={active === "ALL" ? "Rest of the world (Default)" : `${COUNTRIES.find((c) => c.code === active)?.flag ?? ""} ${countryName(active)}`}
           article={activeArticle}
           onChange={updateActive}
-          onClose={() => setActive(null as unknown as string)}
+          onClose={() => setActive(null)}
           onRemove={
             active !== "ALL" && countries[active]
               ? () => {
