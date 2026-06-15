@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import {
@@ -292,11 +292,6 @@ function PreviewEditor({
     }
   }
 
-  const availableToAdd = useMemo(
-    () => COUNTRIES.filter((c) => !countries[c.code]),
-    [countries],
-  );
-  const overrideCodes = Object.keys(countries);
 
   return (
     <>
