@@ -1,0 +1,13 @@
+# Firebase App Hosting configuration
+# https://firebase.google.com/docs/app-hosting
+
+runConfig:
+  runtime: nodejs20
+  
+env:
+  - variable: NODE_ENV
+    value: production
+
+# Build settings handled automatically by Firebase App Hosting
+# It detects Vite and runs: npm run build
+# Output directory: dist
