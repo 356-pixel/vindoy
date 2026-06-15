@@ -4,12 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import CreateLink from "./pages/CreateLink";
-import VideoPage from "./pages/VideoPage";
+import Blogs from "./pages/Blogs";
 import About from "./pages/About";
-import HowItWorks from "./pages/HowItWorks";
-import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
+import PreviewPage from "./pages/PreviewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,12 +21,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/create" element={<CreateLink />} />
-          <Route path="/:id" element={<VideoPage />} />
+          <Route path="/blogs" element={<Blogs />} />
           <Route path="/about" element={<About />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/:slug" element={<PreviewPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
