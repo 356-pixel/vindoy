@@ -30,7 +30,7 @@ export default function FeaturedPreviews() {
         {items.map((p) => (
           <Link
             key={p.id}
-            to="/blogs"
+            to={`/blogs/${p.id}`}
             className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="aspect-[16/9] w-full overflow-hidden bg-secondary">
