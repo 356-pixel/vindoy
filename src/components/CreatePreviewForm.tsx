@@ -113,14 +113,14 @@ export default function CreatePreviewForm() {
                 Processing image…
               </div>
             ) : image ? (
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <ImageIcon className="h-4 w-4 text-primary" />
-                <span className="font-medium">Image uploaded</span>
-                <span className="text-muted-foreground">
-                  · {imageName || "thumbnail.jpg"}
-                </span>
+              <div className="flex flex-col items-center gap-2">
+                <img
+                  src={image}
+                  alt="Thumbnail preview"
+                  className="max-h-32 rounded-md object-contain"
+                />
                 <span className="text-xs text-muted-foreground">
-                  (click to replace)
+                  {imageName || "thumbnail.jpg"} · click to replace
                 </span>
               </div>
             ) : (
