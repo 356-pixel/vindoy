@@ -67,31 +67,30 @@ export default function PreviewPage() {
           className="block w-full rounded-xl"
         />
 
-        {/* View Here CTA with curved arrow whose tail starts from the image */}
-        <div className="relative mt-8 flex justify-center">
-          {/* Arrow: tail near bottom-right of the image above, head pointing at the button */}
+        {/* View Here CTA with curved arrow: tail touches image bottom, head near the button */}
+        <div className="relative mt-6 flex justify-center">
           <svg
             aria-hidden
-            viewBox="0 0 200 140"
-            className="pointer-events-none absolute right-2 hidden h-32 w-44 text-primary sm:block"
-            style={{ top: "-110px" }}
+            viewBox="0 0 200 120"
+            className="pointer-events-none absolute right-6 hidden h-28 w-40 text-primary sm:block"
+            style={{ top: "-90px" }}
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.4"
+            strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            {/* Curve from upper-right (image area) down-left to the button */}
-            <path d="M188 8 C 180 60, 150 95, 110 120" />
-            {/* Arrowhead pointing toward the button (down-left) */}
-            <path d="M118 108 L 108 122 L 124 126" />
+            {/* Tail starts at top (touching image bottom), curves down-left toward button */}
+            <path d="M170 4 C 168 50, 140 85, 96 104" />
+            {/* Arrowhead pointing at the button */}
+            <path d="M108 96 L 94 106 L 104 116" />
           </svg>
 
           <a
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="relative inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            className="relative inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
           >
             View Here
           </a>
