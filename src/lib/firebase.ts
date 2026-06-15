@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA9PxES8o3KoC89uqHOUWAn7EZKIX9fZLs",
-  authDomain: "xcey-video-sharing.firebaseapp.com",
-  projectId: "xcey-video-sharing",
-  storageBucket: "xcey-video-sharing.firebasestorage.app",
-  messagingSenderId: "355683178673",
-  appId: "1:355683178673:web:de926b4d22440ac4d4ea90",
-  measurementId: "G-7TRNN040WZ"
+  apiKey: "AIzaSyB3s_iltBctxS7Sq7Iy7KAPBnHLx8n_MfU",
+  authDomain: "vindoy-45678.firebaseapp.com",
+  projectId: "vindoy-45678",
+  storageBucket: "vindoy-45678.firebasestorage.app",
+  messagingSenderId: "802062575732",
+  appId: "1:802062575732:web:e9c5cf66919ce64665c921",
+  measurementId: "G-D41FKXCFK2"
 };
 
 const app = initializeApp(firebaseConfig);
