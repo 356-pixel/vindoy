@@ -2,56 +2,76 @@
 // Change ADMIN_PASSWORD to whatever you want. The login at /admin checks against this value.
 // (Client-side gate — keep this password to yourself. For stronger security, move to a server-checked rule later.)
 
-export const SHAREABLE_DOMAIN = "https://vinoy.com";
+export const SHAREABLE_DOMAIN = "https://vindoy.com";
 export const ADMIN_PASSWORD = "vindoy2026"; // <- change me
 
 // Curated list of supported countries for per-country article overrides.
 // "ALL" is the implicit default and is not in this list.
-export const COUNTRIES: { code: string; name: string; flag: string }[] = [
-  { code: "US", name: "United States", flag: "🇺🇸" },
-  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "AU", name: "Australia", flag: "🇦🇺" },
-  { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
-  { code: "IE", name: "Ireland", flag: "🇮🇪" },
-  { code: "IN", name: "India", flag: "🇮🇳" },
-  { code: "PK", name: "Pakistan", flag: "🇵🇰" },
-  { code: "BD", name: "Bangladesh", flag: "🇧🇩" },
-  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
-  { code: "KE", name: "Kenya", flag: "🇰🇪" },
-  { code: "ZA", name: "South Africa", flag: "🇿🇦" },
-  { code: "GH", name: "Ghana", flag: "🇬🇭" },
-  { code: "EG", name: "Egypt", flag: "🇪🇬" },
-  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪" },
-  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦" },
-  { code: "QA", name: "Qatar", flag: "🇶🇦" },
-  { code: "DE", name: "Germany", flag: "🇩🇪" },
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "ES", name: "Spain", flag: "🇪🇸" },
-  { code: "IT", name: "Italy", flag: "🇮🇹" },
-  { code: "NL", name: "Netherlands", flag: "🇳🇱" },
-  { code: "SE", name: "Sweden", flag: "🇸🇪" },
-  { code: "NO", name: "Norway", flag: "🇳🇴" },
-  { code: "DK", name: "Denmark", flag: "🇩🇰" },
-  { code: "PL", name: "Poland", flag: "🇵🇱" },
-  { code: "PT", name: "Portugal", flag: "🇵🇹" },
-  { code: "BR", name: "Brazil", flag: "🇧🇷" },
-  { code: "MX", name: "Mexico", flag: "🇲🇽" },
-  { code: "AR", name: "Argentina", flag: "🇦🇷" },
-  { code: "JP", name: "Japan", flag: "🇯🇵" },
-  { code: "KR", name: "South Korea", flag: "🇰🇷" },
-  { code: "CN", name: "China", flag: "🇨🇳" },
-  { code: "HK", name: "Hong Kong", flag: "🇭🇰" },
-  { code: "SG", name: "Singapore", flag: "🇸🇬" },
-  { code: "MY", name: "Malaysia", flag: "🇲🇾" },
-  { code: "ID", name: "Indonesia", flag: "🇮🇩" },
+// Priority countries shown first in the admin (in this exact order).
+export const PRIORITY_COUNTRY_CODES = [
+  "PH", "ID", "KH", "TH", "VN", "MX", "MY", "IN", "BD", "US",
+  "BR", "CO", "TW", "SG", "SA", "KR", "NP", "AR", "CA", "JP",
+  "GB", "PK", "AU", "IT", "FR", "ES", "HK", "DE", "AE", "NG",
+];
+
+const ALL_COUNTRIES: { code: string; name: string; flag: string }[] = [
   { code: "PH", name: "Philippines", flag: "🇵🇭" },
+  { code: "ID", name: "Indonesia", flag: "🇮🇩" },
+  { code: "KH", name: "Cambodia", flag: "🇰🇭" },
   { code: "TH", name: "Thailand", flag: "🇹🇭" },
   { code: "VN", name: "Vietnam", flag: "🇻🇳" },
-  { code: "TR", name: "Turkey", flag: "🇹🇷" },
+  { code: "MX", name: "Mexico", flag: "🇲🇽" },
+  { code: "MY", name: "Malaysia", flag: "🇲🇾" },
+  { code: "IN", name: "India", flag: "🇮🇳" },
+  { code: "BD", name: "Bangladesh", flag: "🇧🇩" },
+  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "BR", name: "Brazil", flag: "🇧🇷" },
+  { code: "CO", name: "Colombia", flag: "🇨🇴" },
+  { code: "TW", name: "Taiwan", flag: "🇹🇼" },
+  { code: "SG", name: "Singapore", flag: "🇸🇬" },
+  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦" },
+  { code: "KR", name: "Korea, Republic of", flag: "🇰🇷" },
+  { code: "NP", name: "Nepal", flag: "🇳🇵" },
+  { code: "AR", name: "Argentina", flag: "🇦🇷" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "JP", name: "Japan", flag: "🇯🇵" },
+  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
+  { code: "PK", name: "Pakistan", flag: "🇵🇰" },
+  { code: "AU", name: "Australia", flag: "🇦🇺" },
+  { code: "IT", name: "Italy", flag: "🇮🇹" },
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "ES", name: "Spain", flag: "🇪🇸" },
+  { code: "HK", name: "Hong Kong", flag: "🇭🇰" },
+  { code: "DE", name: "Germany", flag: "🇩🇪" },
+  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪" },
+  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
+  // Rest of the world (alphabetical)
+  { code: "BE", name: "Belgium", flag: "🇧🇪" },
+  { code: "CL", name: "Chile", flag: "🇨🇱" },
+  { code: "CN", name: "China", flag: "🇨🇳" },
+  { code: "DK", name: "Denmark", flag: "🇩🇰" },
+  { code: "EG", name: "Egypt", flag: "🇪🇬" },
+  { code: "FI", name: "Finland", flag: "🇫🇮" },
+  { code: "GH", name: "Ghana", flag: "🇬🇭" },
+  { code: "GR", name: "Greece", flag: "🇬🇷" },
+  { code: "IE", name: "Ireland", flag: "🇮🇪" },
+  { code: "IL", name: "Israel", flag: "🇮🇱" },
+  { code: "KE", name: "Kenya", flag: "🇰🇪" },
+  { code: "NL", name: "Netherlands", flag: "🇳🇱" },
+  { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
+  { code: "NO", name: "Norway", flag: "🇳🇴" },
+  { code: "PL", name: "Poland", flag: "🇵🇱" },
+  { code: "PT", name: "Portugal", flag: "🇵🇹" },
+  { code: "QA", name: "Qatar", flag: "🇶🇦" },
   { code: "RU", name: "Russia", flag: "🇷🇺" },
+  { code: "ZA", name: "South Africa", flag: "🇿🇦" },
+  { code: "SE", name: "Sweden", flag: "🇸🇪" },
+  { code: "CH", name: "Switzerland", flag: "🇨🇭" },
+  { code: "TR", name: "Turkey", flag: "🇹🇷" },
   { code: "UA", name: "Ukraine", flag: "🇺🇦" },
 ];
+
+export const COUNTRIES = ALL_COUNTRIES;
 
 export function countryName(code: string) {
   if (code === "ALL") return "Default (all countries)";
