@@ -342,45 +342,210 @@ function PreviewEditor({
         </div>
       </header>
 
-      {/* Country selector */}
-      <div className="mb-4 rounded-xl border border-border bg-card p-3">
-        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Globe className="h-3.5 w-3.5" /> Country filter
+      {/* Country grid */}
+      <div className="mb-4 rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Globe className="h-3.5 w-3.5" /> Pick a country to write its article
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <CountryChip
-            active={active === "ALL"}
-            onClick={() => setActive("ALL")}
-            label="🌐 Default (all)"
-            isDefault
-          />
-          {overrideCodes.map((code) => {
+
+        {/* Rest of the world (default) — sits ABOVE the priority list */}
+        <button
+          type="button"
+          onClick={() => setActive("ALL")}
+          className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
+        >
+          <span className="flex items-center gap-2">
+            <span className="text-lg">🌐</span>
+            <span>
+              <span className="block text-sm font-semibold">Rest of the world</span>
+              <span className="block text-[11px] text-muted-foreground">
+                Default article — shown when no country override applies
+              </span>
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-1 text-xs font-medium text-foreground ring-1 ring-border">
+            <Pencil className="h-3 w-3" /> Edit
+          </span>
+        </button>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+          {PRIORITY_COUNTRY_CODES.map((code) => {
             const c = COUNTRIES.find((x) => x.code === code);
+            if (!c) return null;
+            const has = !!countries[code];
             return (
-              <CountryChip
+              <CountryTile
                 key={code}
-                active={active === code}
-                onClick={() => setActive(code)}
-                label={`${c?.flag || ""} ${c?.name || code}`}
-                onRemove={() => removeCountry(code)}
+                flag={c.flag}
+                name={c.name}
+                hasOverride={has}
+                onEdit={() => setActive(code)}
+                onRemove={has ? () => removeCountry(code) : undefined}
               />
             );
           })}
-          <AddCountryMenu options={availableToAdd} onPick={addCountry} />
         </div>
-        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+
+        <p className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
           <CheckCircle2 className="mt-0.5 h-3 w-3 text-primary" />
-          Visitors from a country with an override see that article. Everyone else
-          sees the Default.
+          Click a country to open the editor. Visitors from that country will see
+          its article instead of the default.
         </p>
       </div>
 
-      <ArticleEditor
-        value={activeArticle}
-        onChange={updateActive}
-        countryLabel={active === "ALL" ? "Default (all countries)" : countryName(active)}
-      />
+      {/* Floating editor modal */}
+      {active && (
+        <CountryEditorModal
+          countryLabel={active === "ALL" ? "Rest of the world (Default)" : `${COUNTRIES.find((c) => c.code === active)?.flag ?? ""} ${countryName(active)}`}
+          article={activeArticle}
+          onChange={updateActive}
+          onClose={() => setActive(null as unknown as string)}
+          onRemove={
+            active !== "ALL" && countries[active]
+              ? () => {
+                  removeCountry(active);
+                }
+              : undefined
+          }
+          onSave={async () => {
+            await save();
+          }}
+          saving={saving}
+        />
+      )}
     </>
+  );
+}
+
+function CountryTile({
+  flag,
+  name,
+  hasOverride,
+  onEdit,
+  onRemove,
+}: {
+  flag: string;
+  name: string;
+  hasOverride: boolean;
+  onEdit: () => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div
+      className={`group relative flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
+        hasOverride
+          ? "border-primary/50 bg-primary/5"
+          : "border-border bg-background hover:bg-secondary"
+      }`}
+    >
+      <button type="button" onClick={onEdit} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        <span className="text-base leading-none">{flag}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium">{name}</span>
+          <span className="block text-[10px] text-muted-foreground">
+            {hasOverride ? "Custom article" : "Using default"}
+          </span>
+        </span>
+      </button>
+      <div className="flex flex-none items-center gap-1">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={`Edit ${name}`}
+          title="Edit"
+          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Remove ${name} override`}
+            title="Remove override"
+            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CountryEditorModal({
+  countryLabel,
+  article,
+  onChange,
+  onClose,
+  onRemove,
+  onSave,
+  saving,
+}: {
+  countryLabel: string;
+  article: Article;
+  onChange: (next: Article) => void;
+  onClose: () => void;
+  onRemove?: () => void;
+  onSave: () => Promise<void> | void;
+  saving: boolean;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+      <div className="flex h-full w-full max-w-4xl flex-col overflow-hidden bg-background shadow-xl sm:h-[90vh] sm:rounded-2xl sm:border sm:border-border">
+        <div className="flex flex-none items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Writing article for
+            </div>
+            <h2 className="truncate text-base font-semibold">{countryLabel}</h2>
+          </div>
+          <div className="flex flex-none items-center gap-2">
+            {onRemove && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-secondary hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <ArticleEditor value={article} onChange={onChange} countryLabel={countryLabel} />
+        </div>
+      </div>
+    </div>
   );
 }
 
