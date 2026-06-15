@@ -103,7 +103,10 @@ All colors MUST be HSL.
   .bg-primary {
     background-image: var(--gradient-primary);
   }
-  .text-primary {
+  .bg-gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+  .text-gradient-primary {
     background-image: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
