@@ -251,26 +251,23 @@ function PreviewEditor({
   const [countries, setCountries] = useState<Record<string, Article>>(
     preview.countries || {},
   );
-  const [active, setActive] = useState<string>("ALL");
+  const [active, setActive] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const activeArticle =
-    active === "ALL" ? defaultArticle : countries[active] || emptyArticle();
+  const activeArticle: Article =
+    active === null
+      ? defaultArticle
+      : active === "ALL"
+        ? defaultArticle
+        : countries[active] ||
+          { ...defaultArticle, title: defaultArticle.title };
 
   function updateActive(next: Article) {
-    if (active === "ALL") {
+    if (active === "ALL" || active === null) {
       setDefaultArticle(next);
     } else {
       setCountries({ ...countries, [active]: next });
     }
-  }
-
-  function addCountry(code: string) {
-    if (!code || code === "ALL") return;
-    if (!countries[code]) {
-      setCountries({ ...countries, [code]: emptyArticle(defaultArticle.title) });
-    }
-    setActive(code);
   }
 
   function removeCountry(code: string) {
@@ -278,7 +275,7 @@ function PreviewEditor({
     const next = { ...countries };
     delete next[code];
     setCountries(next);
-    if (active === code) setActive("ALL");
+    if (active === code) setActive(null);
   }
 
   async function save() {
@@ -549,101 +546,3 @@ function CountryEditorModal({
   );
 }
 
-function CountryChip({
-  active,
-  onClick,
-  label,
-  onRemove,
-  isDefault,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  onRemove?: () => void;
-  isDefault?: boolean;
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors ${
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-background text-foreground hover:bg-secondary"
-      }`}
-    >
-      <button type="button" onClick={onClick} className="font-medium">
-        {label}
-      </button>
-      {onRemove && !isDefault && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Remove override"
-          className={`ml-0.5 rounded-full p-0.5 ${active ? "hover:bg-primary-foreground/20" : "hover:bg-secondary"}`}
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      )}
-    </span>
-  );
-}
-
-function AddCountryMenu({
-  options,
-  onPick,
-}: {
-  options: { code: string; name: string; flag: string }[];
-  onPick: (code: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-
-  const filtered = options.filter((c) =>
-    (c.name + " " + c.code).toLowerCase().includes(q.toLowerCase()),
-  );
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded-full border border-dashed border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary"
-      >
-        <Plus className="h-3 w-3" /> Add country
-      </button>
-      {open && (
-        <div className="absolute left-0 z-20 mt-1 w-64 rounded-md border border-border bg-popover p-2 shadow-md">
-          <input
-            autoFocus
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search countries…"
-            className="mb-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring"
-          />
-          <div className="max-h-60 overflow-y-auto">
-            {filtered.length === 0 && (
-              <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-                No matches
-              </p>
-            )}
-            {filtered.map((c) => (
-              <button
-                key={c.code}
-                type="button"
-                onClick={() => {
-                  onPick(c.code);
-                  setOpen(false);
-                  setQ("");
-                }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-secondary"
-              >
-                <span>{c.flag}</span>
-                <span className="flex-1 truncate">{c.name}</span>
-                <span className="text-muted-foreground">{c.code}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
