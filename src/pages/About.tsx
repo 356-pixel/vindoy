@@ -1,40 +1,47 @@
-import Header from "@/components/Header";
+import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 
-const About = () => {
+export default function About() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
-        <h1 className="text-4xl font-bold text-foreground mb-8">About Xcessly</h1>
-        
-        <div className="prose prose-lg max-w-none space-y-6 text-foreground">
+    <Layout>
+      <SEO
+        title="About · ArticlePreview"
+        description="ArticlePreview helps readers discover useful content quickly while sending qualified traffic to original publishers."
+      />
+      <section className="container max-w-3xl py-12">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          About ArticlePreview
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          We believe great writing deserves to be found, and readers deserve a
+          faster way to decide what's worth their time.
+        </p>
+
+        <div className="mt-8 space-y-6 text-[15px] leading-7">
           <p>
-            Xcessly is a simple and secure platform for sharing video links through easy-to-remember IDs.
+            ArticlePreview is a lightweight platform where anyone can share a
+            short summary of an article along with a link to the original
+            source. Instead of full reposts, we focus on previews: just enough
+            context for readers to know if a piece is relevant to them.
           </p>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Our Mission</h2>
           <p>
-            We believe that sharing video content should be simple, secure, and accessible. Our platform allows you to convert long, complex video URLs into short, memorable 6-character IDs that anyone can easily share and access.
+            <strong>For readers</strong>, that means discovering useful content
+            in minutes, not hours, with no paywalls between you and the
+            decision to keep reading.
           </p>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Why Choose Xcessly?</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Simple 6-character IDs (2 letters + 4 digits)</li>
-            <li>Fast and reliable video link access</li>
-            <li>Mobile-optimized design</li>
-            <li>Secure and private</li>
-            <li>No registration required</li>
-          </ul>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">How It Started</h2>
           <p>
-            Xcessly was created to solve the common problem of sharing long, unwieldy video URLs. Whether you're sharing educational content, entertainment videos, or business presentations, our platform makes it easy to create memorable links that anyone can access quickly.
+            <strong>For publishers and writers</strong>, every preview funnels
+            qualified, motivated readers straight to your site. You keep the
+            attention, the ad revenue, the comments, and the relationship with
+            the audience.
+          </p>
+          <p>
+            We're built around three principles: respect the source, keep the
+            experience fast, and make sharing effortless. No accounts to
+            create, no friction to ship a preview.
           </p>
         </div>
-      </main>
-    </div>
+      </section>
+    </Layout>
   );
-};
-
-export default About;
+}

@@ -1,65 +1,68 @@
-import Header from "@/components/Header";
+import Layout from "@/components/Layout";
+import SEO from "@/components/SEO";
 
-const Privacy = () => {
+export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
-        <h1 className="text-4xl font-bold text-foreground mb-8">Privacy Policy</h1>
-        
-        <div className="prose prose-lg max-w-none space-y-6 text-foreground">
-          <h2 className="text-2xl font-bold mt-8 mb-4">Information We Collect</h2>
-          <p>
-            When you use Xcessly, we collect the following information:
-          </p>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Video URLs that you submit to create shareable links</li>
-            <li>Optional titles and descriptions you provide</li>
-            <li>Basic usage analytics to improve our service</li>
-            <li>IP addresses for security and fraud prevention</li>
-          </ul>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">How We Use Your Information</h2>
-          <p>
-            We use the information we collect to:
-          </p>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Provide and maintain our video link sharing service</li>
-            <li>Generate unique IDs for your video links</li>
-            <li>Improve our platform and user experience</li>
-            <li>Prevent abuse and ensure security</li>
-            <li>Comply with legal obligations</li>
-          </ul>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Information Sharing</h2>
-          <p>
-            We do not sell, trade, or otherwise transfer your personal information to third parties, except:
-          </p>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>When required by law or legal process</li>
-            <li>To protect our rights, property, or safety</li>
-            <li>With your explicit consent</li>
-          </ul>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Data Security</h2>
-          <p>
-            We implement appropriate security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet is 100% secure.
-          </p>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Data Retention</h2>
-          <p>
-            We retain your video links and associated data indefinitely unless you request deletion. You can contact us at any time to request removal of your data.
-          </p>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Contact Us</h2>
-          <p>
-            If you have any questions about this Privacy Policy, please contact us at privacy@xcessly.com.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
-};
+    <Layout>
+      <SEO
+        title="Privacy Policy · ArticlePreview"
+        description="How ArticlePreview handles data, cookies, user-generated content, and external links."
+      />
+      <section className="container max-w-3xl py-12">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          Privacy Policy
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Last updated: {new Date().toLocaleDateString()}
+        </p>
 
-export default Privacy;
+        <div className="mt-8 space-y-8 text-[15px] leading-7">
+          <section>
+            <h2 className="text-xl font-semibold">Data we collect</h2>
+            <p className="mt-2">
+              ArticlePreview is designed to collect as little personal data as
+              possible. Previews you create are stored locally in your browser
+              by default. If you contact us, we keep the information you send
+              only as long as needed to respond.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">Cookies and local storage</h2>
+            <p className="mt-2">
+              We use browser local storage to save the previews you've created
+              so you can revisit them. We may use minimal analytics cookies to
+              understand which pages are popular. You can clear local storage
+              and cookies at any time from your browser settings.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">User-generated content</h2>
+            <p className="mt-2">
+              Previews, titles, and images submitted through ArticlePreview are
+              your responsibility. By submitting content you confirm you have
+              the right to share it and that it doesn't infringe copyright,
+              violate privacy, or include illegal material. We may remove
+              content that breaks these rules or that we believe is harmful.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">External links</h2>
+            <p className="mt-2">
+              Previews link to third-party websites. We don't control those
+              sites and aren't responsible for their content, privacy
+              practices, or accuracy. Review the destination site's own terms
+              and policies before sharing personal information there.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">Contact</h2>
+            <p className="mt-2">
+              For privacy questions, reach us via the Contact page and we'll
+              respond as soon as we can.
+            </p>
+          </section>
+        </div>
+      </section>
+    </Layout>
+  );
+}
