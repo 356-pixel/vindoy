@@ -49,8 +49,8 @@ export default function Contact() {
   return (
     <Layout>
       <SEO
-        title="Contact · ArticlePreview"
-        description="Get in touch with the ArticlePreview team."
+        title="Contact · Vindoy"
+        description="Get in touch with the Vindoy team."
       />
       <section className="container max-w-2xl py-12">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">

@@ -28,7 +28,7 @@ export default function Navbar() {
           <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
             <BookOpen className="h-4 w-4" aria-hidden />
           </span>
-          <span className="text-lg">ArticlePreview</span>
+          <span className="text-lg">Vindoy</span>
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
