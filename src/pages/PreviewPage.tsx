@@ -9,24 +9,54 @@ import { getPreviewDoc } from "@/lib/previewsApi";
 import { getDefaultArticle } from "@/lib/articlesApi";
 import type { Article, PreviewDoc } from "@/lib/articleTypes";
 
+const ARTICLE_CACHE_KEY = "vindoy_default_article_v1";
+
+function readCachedArticle(): Article | null {
+  try {
+    const raw = sessionStorage.getItem(ARTICLE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Article) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function PreviewPage() {
   const { slug = "" } = useParams();
   const [preview, setPreview] = useState<PreviewDoc | undefined | null>(undefined);
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<Article | null>(readCachedArticle);
   const [imgLoaded, setImgLoaded] = useState(false);
 
+  // Fetch the preview doc — this is what the page primarily depends on.
   useEffect(() => {
     let cancelled = false;
-    // Fetch preview + default article in parallel for the fastest possible load.
-    Promise.all([getPreviewDoc(slug), getDefaultArticle()]).then(([doc, a]) => {
-      if (cancelled) return;
-      setPreview(doc);
-      setArticle(a);
+    getPreviewDoc(slug).then((doc) => {
+      if (!cancelled) setPreview(doc);
     });
     return () => {
       cancelled = true;
     };
   }, [slug]);
+
+  // Fetch the global article in the background — never blocks the preview.
+  useEffect(() => {
+    let cancelled = false;
+    getDefaultArticle()
+      .then((a) => {
+        if (cancelled || !a) return;
+        setArticle(a);
+        try {
+          sessionStorage.setItem(ARTICLE_CACHE_KEY, JSON.stringify(a));
+        } catch {
+          // ignore quota errors
+        }
+      })
+      .catch(() => {
+        // silent — article is optional
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (preview === undefined) {
     return (
@@ -35,12 +65,6 @@ export default function PreviewPage() {
           <Skeleton className="aspect-[16/9] w-full rounded-xl" />
           <div className="mt-6 flex justify-center">
             <Skeleton className="h-12 w-40 rounded-md" />
-          </div>
-          <div className="mt-10 space-y-4">
-            <Skeleton className="h-7 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-11/12" />
-            <Skeleton className="h-4 w-10/12" />
           </div>
         </article>
       </Layout>
@@ -68,18 +92,18 @@ export default function PreviewPage() {
         description={(article?.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
       />
       <article className="container max-w-3xl py-8 sm:py-12">
-        {/* Thumbnail — matches blogs card: 16:9, rounded-xl, cover */}
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-secondary">
           {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
           <img
             src={preview.image}
             alt={article?.title || "Article preview"}
             onLoad={() => setImgLoaded(true)}
+            fetchPriority="high"
+            decoding="async"
             className={`absolute inset-0 h-full w-full object-cover transition-opacity ${imgLoaded ? "opacity-100" : "opacity-0"}`}
           />
         </div>
 
-        {/* View Link CTA — button centered, arrow on right rotated 150° (anti-clockwise 30° from pointing-left) */}
         <div className="relative mt-8 flex items-center justify-center">
           <a
             href={preview.sourceUrl}
@@ -98,7 +122,6 @@ export default function PreviewPage() {
           />
         </div>
 
-        {/* Article body */}
         {article && (
           <div className="mt-10">
             <ArticleRenderer article={article} />
