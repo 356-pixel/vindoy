@@ -24,7 +24,7 @@ export default function ArticleRenderer({ article }: { article: Article }) {
   return (
     <div className="space-y-6">
       {article.title && (
-        <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 className="text-balance text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {article.title}
         </h2>
       )}
@@ -33,7 +33,7 @@ export default function ArticleRenderer({ article }: { article: Article }) {
           return (
             <div
               key={b.id}
-              className="prose prose-neutral max-w-none text-[15px] leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2"
+              className="prose prose-neutral max-w-none text-center text-[15px] leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_ol]:text-left [&_ul]:text-left"
               dangerouslySetInnerHTML={{ __html: b.html || "" }}
             />
           );
