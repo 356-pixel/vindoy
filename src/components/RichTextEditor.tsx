@@ -60,6 +60,10 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         <TBtn label="Bulleted list" onClick={() => exec("insertUnorderedList")}><List className="h-3.5 w-3.5" /></TBtn>
         <TBtn label="Numbered list" onClick={() => exec("insertOrderedList")}><ListOrdered className="h-3.5 w-3.5" /></TBtn>
         <Sep />
+        <TBtn label="Align left" onClick={() => exec("justifyLeft")}><AlignLeft className="h-3.5 w-3.5" /></TBtn>
+        <TBtn label="Align center" onClick={() => exec("justifyCenter")}><AlignCenter className="h-3.5 w-3.5" /></TBtn>
+        <TBtn label="Align right" onClick={() => exec("justifyRight")}><AlignRight className="h-3.5 w-3.5" /></TBtn>
+        <Sep />
         <TBtn label="Insert link" onClick={addLink}><LinkIcon className="h-3.5 w-3.5" /></TBtn>
         <TBtn label="Remove link" onClick={() => exec("unlink")}><Link2Off className="h-3.5 w-3.5" /></TBtn>
         <Sep />
