@@ -242,18 +242,41 @@ function BlockEditor({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-secondary/30 px-3 py-6 text-sm text-muted-foreground hover:bg-secondary/60"
-            >
-              {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ImagePlus className="h-4 w-4" />
-              )}
-              {busy ? "Compressing…" : "Upload image"}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-secondary/30 px-3 py-6 text-sm text-muted-foreground hover:bg-secondary/60"
+              >
+                {busy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+                {busy ? "Compressing…" : "Upload image"}
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">or paste URL</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <input
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const v = (e.target as HTMLInputElement).value.trim();
+                    if (v) onChange({ src: v } as Partial<Block>);
+                  }
+                }}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v) onChange({ src: v } as Partial<Block>);
+                }}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           )}
           <input
             ref={fileRef}

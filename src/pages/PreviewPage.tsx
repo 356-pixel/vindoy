@@ -5,9 +5,8 @@ import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import ArticleRenderer from "@/components/ArticleRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { detectCountry } from "@/lib/country";
 import { getPreviewDoc } from "@/lib/previewsApi";
-import { getArticleForCountry } from "@/lib/articlesApi";
+import { getDefaultArticle } from "@/lib/articlesApi";
 import type { Article, PreviewDoc } from "@/lib/articleTypes";
 
 export default function PreviewPage() {
@@ -18,15 +17,12 @@ export default function PreviewPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const [doc, c] = await Promise.all([getPreviewDoc(slug), detectCountry()]);
+    // Fetch preview + default article in parallel for the fastest possible load.
+    Promise.all([getPreviewDoc(slug), getDefaultArticle()]).then(([doc, a]) => {
       if (cancelled) return;
       setPreview(doc);
-      if (doc) {
-        const a = await getArticleForCountry(c);
-        if (!cancelled) setArticle(a);
-      }
-    })();
+      setArticle(a);
+    });
     return () => {
       cancelled = true;
     };
@@ -98,7 +94,7 @@ export default function PreviewPage() {
             aria-hidden
             strokeWidth={3}
             style={{ transform: "rotate(150deg)" }}
-            className="absolute left-1/2 ml-24 h-8 w-20 text-primary"
+            className="absolute left-1/2 ml-14 h-8 w-16 text-primary"
           />
         </div>
 
