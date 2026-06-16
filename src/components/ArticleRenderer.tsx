@@ -1,5 +1,23 @@
+import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import type { Article } from "@/lib/articleTypes";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function RenderedImage({ src, alt }: { src: string; alt?: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full">
+      {!loaded && <Skeleton className="aspect-[16/9] w-full rounded-lg" />}
+      <img
+        src={src}
+        alt={alt || ""}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        className={`w-full rounded-lg transition-opacity ${loaded ? "opacity-100" : "absolute inset-0 opacity-0"}`}
+      />
+    </div>
+  );
+}
 
 export default function ArticleRenderer({ article }: { article: Article }) {
   if (!article) return null;
@@ -15,23 +33,14 @@ export default function ArticleRenderer({ article }: { article: Article }) {
           return (
             <div
               key={b.id}
-              className="whitespace-pre-wrap text-[15px] leading-7 text-foreground/90"
-            >
-              {b.html}
-            </div>
+              className="prose prose-neutral max-w-none text-[15px] leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2"
+              dangerouslySetInnerHTML={{ __html: b.html || "" }}
+            />
           );
         }
         if (b.type === "image") {
           if (!b.src) return null;
-          return (
-            <img
-              key={b.id}
-              src={b.src}
-              alt={b.alt || ""}
-              loading="lazy"
-              className="w-full rounded-lg"
-            />
-          );
+          return <RenderedImage key={b.id} src={b.src} alt={b.alt} />;
         }
         if (b.type === "cta") {
           if (!b.label || !b.url) return null;
