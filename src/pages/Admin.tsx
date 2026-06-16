@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import {
   CheckCircle2,
-  ChevronLeft,
   Globe,
   Loader2,
   Lock,
@@ -18,7 +17,6 @@ import {
   ADMIN_PASSWORD,
   COUNTRIES,
   PRIORITY_COUNTRY_CODES,
-  SHAREABLE_DOMAIN,
   countryName,
 } from "@/lib/adminConfig";
 import {
@@ -120,13 +118,14 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<PreviewDoc[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   async function refresh() {
     setLoading(true);
     try {
       const list = await listPreviews();
       setItems(list);
+      setSelectedSlug((prev) => prev ?? list[0]?.slug ?? null);
     } catch (e) {
       console.error(e);
       toast.error("Could not load previews");
@@ -139,110 +138,68 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     refresh();
   }, []);
 
-  const current = selected ? items.find((i) => i.slug === selected) : null;
+  const current = useMemo(
+    () => items.find((i) => i.slug === selectedSlug) ?? null,
+    [items, selectedSlug],
+  );
 
-  if (current) {
+  if (loading) {
     return (
-      <PreviewEditor
-        preview={current}
-        onBack={() => setSelected(null)}
-        onSaved={(updated) => {
-          setItems((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
-        }}
-        onLogout={onLogout}
-      />
+      <div className="grid place-items-center py-20 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <>
+        <header className="mb-6 flex items-center justify-end">
+          <button
+            onClick={onLogout}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Logout
+          </button>
+        </header>
+        <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-10 text-center text-sm text-muted-foreground">
+          No previews yet. Create one from the home page.
+        </div>
+      </>
     );
   }
 
   return (
-    <>
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Previews</h1>
-          <p className="text-sm text-muted-foreground">
-            Edit per-country articles for every shareable link.
-          </p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary"
-        >
-          <LogOut className="h-3.5 w-3.5" /> Logout
-        </button>
-      </header>
-
-      {loading ? (
-        <div className="grid place-items-center py-20 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      ) : items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-10 text-center text-sm text-muted-foreground">
-          No previews yet. Create one from the home page.
-        </div>
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {items.map((p) => (
-            <li
-              key={p.slug}
-              className="flex gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
-            >
-              <img
-                src={p.image}
-                alt=""
-                className="h-20 w-28 flex-none rounded-md object-cover"
-              />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="truncate text-sm font-semibold">
-                  {p.default?.title || p.slug}
-                </div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {SHAREABLE_DOMAIN}/{p.slug}
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  {Object.keys(p.countries || {}).length} country override
-                  {Object.keys(p.countries || {}).length === 1 ? "" : "s"}
-                </div>
-                <div className="mt-auto flex gap-2 pt-2">
-                  <button
-                    onClick={() => setSelected(p.slug)}
-                    className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm("Delete this preview link?")) return;
-                      try {
-                        await deletePreview(p.slug);
-                        setItems((prev) => prev.filter((i) => i.slug !== p.slug));
-                        toast.success("Deleted");
-                      } catch {
-                        toast.error("Could not delete");
-                      }
-                    }}
-                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-destructive"
-                  >
-                    <Trash2 className="h-3 w-3" /> Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+    <PreviewEditor
+      preview={current ?? items[0]}
+      allPreviews={items}
+      onSwitch={(slug) => setSelectedSlug(slug)}
+      onSaved={(updated) => {
+        setItems((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      }}
+      onDeletedPreview={(slug) => {
+        const next = items.filter((i) => i.slug !== slug);
+        setItems(next);
+        setSelectedSlug(next[0]?.slug ?? null);
+      }}
+      onLogout={onLogout}
+    />
   );
 }
 
 function PreviewEditor({
   preview,
-  onBack,
+  allPreviews,
+  onSwitch,
   onSaved,
+  onDeletedPreview,
   onLogout,
 }: {
   preview: PreviewDoc;
-  onBack: () => void;
+  allPreviews: PreviewDoc[];
+  onSwitch: (slug: string) => void;
   onSaved: (next: PreviewDoc) => void;
+  onDeletedPreview: (slug: string) => void;
   onLogout: () => void;
 }) {
   const [defaultArticle, setDefaultArticle] = useState<Article>(
@@ -253,6 +210,13 @@ function PreviewEditor({
   );
   const [active, setActive] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Reset local state when switching preview
+  useEffect(() => {
+    setDefaultArticle(preview.default || emptyArticle());
+    setCountries(preview.countries || {});
+    setActive(null);
+  }, [preview.slug]);
 
   const activeArticle: Article =
     active === null
@@ -270,7 +234,7 @@ function PreviewEditor({
   }
 
   function removeCountry(code: string) {
-    if (!confirm(`Remove override for ${countryName(code)}? Visitors will see the default again.`)) return;
+    if (!confirm(`Delete the article for ${countryName(code)}? Visitors from this country will fall back to the default.`)) return;
     const next = { ...countries };
     delete next[code];
     setCountries(next);
@@ -291,27 +255,42 @@ function PreviewEditor({
     }
   }
 
+  async function deleteCurrentPreview() {
+    if (!confirm("Delete this entire preview link? This cannot be undone.")) return;
+    try {
+      await deletePreview(preview.slug);
+      onDeletedPreview(preview.slug);
+      toast.success("Preview deleted");
+    } catch {
+      toast.error("Could not delete preview");
+    }
+  }
 
   return (
     <>
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-secondary"
-          >
-            <ChevronLeft className="h-4 w-4" /> Back
-          </button>
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold">
-              {preview.default?.title || preview.slug}
-            </h1>
-            <p className="truncate text-xs text-muted-foreground">
-              {SHAREABLE_DOMAIN}/{preview.slug}
-            </p>
-          </div>
+        <div className="flex items-center gap-2">
+          {allPreviews.length > 1 ? (
+            <select
+              value={preview.slug}
+              onChange={(e) => onSwitch(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            >
+              {allPreviews.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  /{p.slug} — {p.default?.title || "(untitled)"}
+                </option>
+              ))}
+            </select>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={deleteCurrentPreview}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete preview
+          </button>
           <button
             onClick={save}
             disabled={saving}
@@ -342,6 +321,7 @@ function PreviewEditor({
         <ul className="divide-y divide-border">
           {/* Rest of the world (default) */}
           <CountryRow
+            index={0}
             flag="🌐"
             name="Rest of the world"
             subtitle="Default — used when no country override applies"
@@ -351,7 +331,7 @@ function PreviewEditor({
             onEdit={() => setActive("ALL")}
           />
 
-          {PRIORITY_COUNTRY_CODES.map((code) => {
+          {PRIORITY_COUNTRY_CODES.map((code, i) => {
             const c = COUNTRIES.find((x) => x.code === code);
             if (!c) return null;
             const override = countries[code];
@@ -359,6 +339,7 @@ function PreviewEditor({
             return (
               <CountryRow
                 key={code}
+                index={i + 1}
                 flag={c.flag}
                 name={c.name}
                 title={hasCustom ? override.title : ""}
@@ -401,6 +382,7 @@ function PreviewEditor({
 }
 
 function CountryRow({
+  index,
   flag,
   name,
   subtitle,
@@ -410,6 +392,7 @@ function CountryRow({
   onEdit,
   onRemove,
 }: {
+  index: number;
   flag: string;
   name: string;
   subtitle?: string;
@@ -425,6 +408,9 @@ function CountryRow({
         isDefault ? "bg-primary/5" : ""
       }`}
     >
+      <span className="w-6 flex-none text-right text-xs tabular-nums text-muted-foreground">
+        {index}.
+      </span>
       <span className="text-xl leading-none">{flag}</span>
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div className="w-48 flex-none min-w-0">
@@ -544,4 +530,3 @@ function CountryEditorModal({
     </div>
   );
 }
-
