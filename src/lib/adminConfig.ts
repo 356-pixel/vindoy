@@ -10,7 +10,7 @@ export const ADMIN_PASSWORD = "vindoy2026"; // <- change me
 // Priority countries shown first in the admin (in this exact order).
 export const PRIORITY_COUNTRY_CODES = [
   "PH", "ID", "KH", "TH", "VN", "MX", "MY", "IN", "BD", "US",
-  "BR", "CO", "TW", "SG", "SA", "KR", "NP", "AR", "CA", "JP",
+  "BR", "TW", "SG", "SA", "KR", "CA", "JP",
   "GB", "PK", "AU", "IT", "FR", "ES", "HK", "DE", "AE", "NG",
 ];
 

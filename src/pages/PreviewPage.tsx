@@ -71,32 +71,33 @@ export default function PreviewPage() {
         description={(article.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
       />
       <article className="container max-w-3xl py-8 sm:py-12">
-        {/* Thumbnail with skeleton */}
-        <div className="relative w-full">
-          {!imgLoaded && <Skeleton className="aspect-[16/9] w-full rounded-xl" />}
+        {/* Thumbnail with skeleton — 16:10 cover-crop */}
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl">
+          {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
           <img
             src={preview.image}
             alt={article.title || "Article preview"}
             onLoad={() => setImgLoaded(true)}
-            className={`block w-full rounded-xl transition-opacity ${imgLoaded ? "opacity-100" : "absolute inset-0 opacity-0"}`}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity ${imgLoaded ? "opacity-100" : "opacity-0"}`}
           />
         </div>
 
-        {/* View Here CTA with a simple horizontal arrow pointing at the button */}
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <ArrowRight
-            aria-hidden
-            strokeWidth={3}
-            className="h-7 w-10 text-primary"
-          />
+        {/* View Link CTA — button centered, arrow on right pointing left at it */}
+        <div className="relative mt-8 flex items-center justify-center">
           <a
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
+            style={{ backgroundImage: "none" }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
           >
-            View Here
+            View Link
           </a>
+          <ArrowRight
+            aria-hidden
+            strokeWidth={3}
+            className="absolute left-1/2 ml-24 h-8 w-20 rotate-180 text-primary"
+          />
         </div>
 
         {/* Article body */}
