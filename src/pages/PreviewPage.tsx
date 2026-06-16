@@ -6,10 +6,10 @@ import SEO from "@/components/SEO";
 import ArticleRenderer from "@/components/ArticleRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPreviewDoc } from "@/lib/previewsApi";
-import { getDefaultArticle } from "@/lib/articlesApi";
+import { getActiveArticle } from "@/lib/articlesApi";
 import type { Article, PreviewDoc } from "@/lib/articleTypes";
 
-const ARTICLE_CACHE_KEY = "vindoy_default_article_v1";
+const ARTICLE_CACHE_KEY = "vindoy_active_article_v1";
 
 function readCachedArticle(): Article | null {
   try {
@@ -40,7 +40,7 @@ export default function PreviewPage() {
   // Fetch the global article in the background — never blocks the preview.
   useEffect(() => {
     let cancelled = false;
-    getDefaultArticle()
+    getActiveArticle()
       .then((a) => {
         if (cancelled || !a) return;
         setArticle(a);
@@ -61,7 +61,7 @@ export default function PreviewPage() {
   if (preview === undefined) {
     return (
       <Layout>
-        <article className="container max-w-3xl py-8 sm:py-12">
+        <article className="container max-w-3xl px-2 py-4 sm:px-3 sm:py-6">
           <Skeleton className="aspect-[16/9] w-full rounded-xl" />
           <div className="mt-6 flex justify-center">
             <Skeleton className="h-12 w-40 rounded-md" />
@@ -91,7 +91,7 @@ export default function PreviewPage() {
         title={`${article?.title || "Article preview"} · Vindoy`}
         description={(article?.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
       />
-      <article className="container max-w-3xl py-8 sm:py-12">
+      <article className="container max-w-3xl px-2 py-4 sm:px-3 sm:py-6">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-secondary">
           {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
           <img
@@ -123,7 +123,7 @@ export default function PreviewPage() {
         </div>
 
         {article && (
-          <div className="mt-10">
+          <div className="mt-20 sm:mt-24">
             <ArticleRenderer article={article} />
           </div>
         )}
