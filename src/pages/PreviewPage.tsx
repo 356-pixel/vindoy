@@ -91,7 +91,7 @@ export default function PreviewPage() {
         title={`${article?.title || "Article preview"} · Vindoy`}
         description={(article?.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
       />
-      <article className="container max-w-3xl px-2 py-4 sm:px-3 sm:py-6">
+      <article className="container max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-secondary">
           {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
           <img
