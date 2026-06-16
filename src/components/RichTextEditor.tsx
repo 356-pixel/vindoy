@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Link as LinkIcon, Link2Off, List, ListOrdered, Heading2, Quote, Undo, Redo } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Link as LinkIcon, Link2Off, List, ListOrdered, Heading2, Quote, Undo, Redo } from "lucide-react";
 
 type Props = {
   value: string;
@@ -62,7 +62,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         <Sep />
         <TBtn label="Align left" onClick={() => exec("justifyLeft")}><AlignLeft className="h-3.5 w-3.5" /></TBtn>
         <TBtn label="Align center" onClick={() => exec("justifyCenter")}><AlignCenter className="h-3.5 w-3.5" /></TBtn>
-        <TBtn label="Align right" onClick={() => exec("justifyRight")}><AlignRight className="h-3.5 w-3.5" /></TBtn>
+        <TBtn label="Justify" onClick={() => exec("justifyFull")}><AlignJustify className="h-3.5 w-3.5" /></TBtn>
         <Sep />
         <TBtn label="Insert link" onClick={addLink}><LinkIcon className="h-3.5 w-3.5" /></TBtn>
         <TBtn label="Remove link" onClick={() => exec("unlink")}><Link2Off className="h-3.5 w-3.5" /></TBtn>
