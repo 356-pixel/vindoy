@@ -61,7 +61,7 @@ export default function PreviewPage() {
   if (preview === undefined) {
     return (
       <Layout>
-        <article className="container max-w-3xl px-2 py-4 sm:px-3 sm:py-6">
+        <article className="container max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
           <Skeleton className="aspect-[16/9] w-full rounded-xl" />
           <div className="mt-6 flex justify-center">
             <Skeleton className="h-12 w-40 rounded-md" />
