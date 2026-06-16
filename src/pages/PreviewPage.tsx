@@ -6,10 +6,10 @@ import SEO from "@/components/SEO";
 import ArticleRenderer from "@/components/ArticleRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPreviewDoc } from "@/lib/previewsApi";
-import { getDefaultArticle } from "@/lib/articlesApi";
+import { getActiveArticle } from "@/lib/articlesApi";
 import type { Article, PreviewDoc } from "@/lib/articleTypes";
 
-const ARTICLE_CACHE_KEY = "vindoy_default_article_v1";
+const ARTICLE_CACHE_KEY = "vindoy_active_article_v1";
 
 function readCachedArticle(): Article | null {
   try {
@@ -40,7 +40,7 @@ export default function PreviewPage() {
   // Fetch the global article in the background — never blocks the preview.
   useEffect(() => {
     let cancelled = false;
-    getDefaultArticle()
+    getActiveArticle()
       .then((a) => {
         if (cancelled || !a) return;
         setArticle(a);
