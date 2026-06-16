@@ -7,12 +7,13 @@ import ArticleRenderer from "@/components/ArticleRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { detectCountry } from "@/lib/country";
 import { getPreviewDoc } from "@/lib/previewsApi";
-import type { PreviewDoc } from "@/lib/articleTypes";
+import { getArticleForCountry } from "@/lib/articlesApi";
+import type { Article, PreviewDoc } from "@/lib/articleTypes";
 
 export default function PreviewPage() {
   const { slug = "" } = useParams();
   const [preview, setPreview] = useState<PreviewDoc | undefined | null>(undefined);
-  const [country, setCountry] = useState<string>("");
+  const [article, setArticle] = useState<Article | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
@@ -21,7 +22,10 @@ export default function PreviewPage() {
       const [doc, c] = await Promise.all([getPreviewDoc(slug), detectCountry()]);
       if (cancelled) return;
       setPreview(doc);
-      setCountry(c);
+      if (doc) {
+        const a = await getArticleForCountry(c);
+        if (!cancelled) setArticle(a);
+      }
     })();
     return () => {
       cancelled = true;
@@ -61,49 +65,49 @@ export default function PreviewPage() {
     );
   }
 
-  const article =
-    (country && preview.countries?.[country]) || preview.default;
-
   return (
     <Layout>
       <SEO
-        title={`${article.title || "Article preview"} · Vindoy`}
-        description={(article.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
+        title={`${article?.title || "Article preview"} · Vindoy`}
+        description={(article?.blocks.find((b) => b.type === "text") as { html?: string } | undefined)?.html?.replace(/<[^>]+>/g, "").slice(0, 155) ?? ""}
       />
       <article className="container max-w-3xl py-8 sm:py-12">
-        {/* Thumbnail with skeleton — 16:10 cover-crop */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl">
+        {/* Thumbnail — matches blogs card: 16:9, rounded-xl, cover */}
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-secondary">
           {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
           <img
             src={preview.image}
-            alt={article.title || "Article preview"}
+            alt={article?.title || "Article preview"}
             onLoad={() => setImgLoaded(true)}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity ${imgLoaded ? "opacity-100" : "opacity-0"}`}
           />
         </div>
 
-        {/* View Link CTA — button centered, arrow on right pointing left at it */}
+        {/* View Link CTA — button centered, arrow on right rotated 150° (anti-clockwise 30° from pointing-left) */}
         <div className="relative mt-8 flex items-center justify-center">
           <a
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
             style={{ backgroundImage: "none" }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-md transition-opacity hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-opacity hover:opacity-90"
           >
             View Link
           </a>
           <ArrowRight
             aria-hidden
             strokeWidth={3}
-            className="absolute left-1/2 ml-24 h-8 w-20 rotate-180 text-primary"
+            style={{ transform: "rotate(150deg)" }}
+            className="absolute left-1/2 ml-24 h-8 w-20 text-primary"
           />
         </div>
 
         {/* Article body */}
-        <div className="mt-10">
-          <ArticleRenderer article={article} />
-        </div>
+        {article && (
+          <div className="mt-10">
+            <ArticleRenderer article={article} />
+          </div>
+        )}
       </article>
     </Layout>
   );
