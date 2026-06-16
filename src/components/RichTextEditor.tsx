@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Italic, Link as LinkIcon, Link2Off, List, ListOrdered, Heading2, Quote, Undo, Redo } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Link as LinkIcon, Link2Off, List, ListOrdered, Heading2, Quote, Undo, Redo } from "lucide-react";
 
 type Props = {
   value: string;
