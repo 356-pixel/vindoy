@@ -259,8 +259,7 @@ function PreviewEditor({
       ? defaultArticle
       : active === "ALL"
         ? defaultArticle
-        : countries[active] ||
-          { ...defaultArticle, title: defaultArticle.title };
+        : countries[active] || emptyArticle();
 
   function updateActive(next: Article) {
     if (active === "ALL" || active === null) {
@@ -334,54 +333,46 @@ function PreviewEditor({
         </div>
       </header>
 
-      {/* Country grid */}
-      <div className="mb-4 rounded-xl border border-border bg-card p-4">
-        <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Globe className="h-3.5 w-3.5" /> Pick a country to write its article
+      {/* Country list — Rest of the world on top, then each priority country */}
+      <div className="mb-4 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center gap-1.5 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-medium text-muted-foreground">
+          <Globe className="h-3.5 w-3.5" /> Articles by country
         </div>
 
-        {/* Rest of the world (default) — sits ABOVE the priority list */}
-        <button
-          type="button"
-          onClick={() => setActive("ALL")}
-          className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
-        >
-          <span className="flex items-center gap-2">
-            <span className="text-lg">🌐</span>
-            <span>
-              <span className="block text-sm font-semibold">Rest of the world</span>
-              <span className="block text-[11px] text-muted-foreground">
-                Default article — shown when no country override applies
-              </span>
-            </span>
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-1 text-xs font-medium text-foreground ring-1 ring-border">
-            <Pencil className="h-3 w-3" /> Edit
-          </span>
-        </button>
+        <ul className="divide-y divide-border">
+          {/* Rest of the world (default) */}
+          <CountryRow
+            flag="🌐"
+            name="Rest of the world"
+            subtitle="Default — used when no country override applies"
+            title={defaultArticle?.title}
+            hasCustom={true}
+            isDefault
+            onEdit={() => setActive("ALL")}
+          />
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {PRIORITY_COUNTRY_CODES.map((code) => {
             const c = COUNTRIES.find((x) => x.code === code);
             if (!c) return null;
-            const has = !!countries[code];
+            const override = countries[code];
+            const hasCustom = !!override;
             return (
-              <CountryTile
+              <CountryRow
                 key={code}
                 flag={c.flag}
                 name={c.name}
-                hasOverride={has}
+                title={hasCustom ? override.title : ""}
+                hasCustom={hasCustom}
                 onEdit={() => setActive(code)}
-                onRemove={has ? () => removeCountry(code) : undefined}
+                onRemove={hasCustom ? () => removeCountry(code) : undefined}
               />
             );
           })}
-        </div>
+        </ul>
 
-        <p className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+        <p className="flex items-start gap-1.5 border-t border-border px-4 py-2.5 text-[11px] text-muted-foreground">
           <CheckCircle2 className="mt-0.5 h-3 w-3 text-primary" />
-          Click a country to open the editor. Visitors from that country will see
-          its article instead of the default.
+          Countries without a custom article will fall back to "Rest of the world".
         </p>
       </div>
 
@@ -409,59 +400,72 @@ function PreviewEditor({
   );
 }
 
-function CountryTile({
+function CountryRow({
   flag,
   name,
-  hasOverride,
+  subtitle,
+  title,
+  hasCustom,
+  isDefault,
   onEdit,
   onRemove,
 }: {
   flag: string;
   name: string;
-  hasOverride: boolean;
+  subtitle?: string;
+  title?: string;
+  hasCustom: boolean;
+  isDefault?: boolean;
   onEdit: () => void;
   onRemove?: () => void;
 }) {
   return (
-    <div
-      className={`group relative flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
-        hasOverride
-          ? "border-primary/50 bg-primary/5"
-          : "border-border bg-background hover:bg-secondary"
+    <li
+      className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/40 ${
+        isDefault ? "bg-primary/5" : ""
       }`}
     >
-      <button type="button" onClick={onEdit} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-        <span className="text-base leading-none">{flag}</span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-medium">{name}</span>
-          <span className="block text-[10px] text-muted-foreground">
-            {hasOverride ? "Custom article" : "Using default"}
-          </span>
-        </span>
-      </button>
+      <span className="text-xl leading-none">{flag}</span>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="w-48 flex-none min-w-0">
+          <div className="truncate text-sm font-semibold">{name}</div>
+          <div className="truncate text-[11px] text-muted-foreground">
+            {subtitle ?? (hasCustom ? "Custom article" : "Using default")}
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          {title ? (
+            <span className="truncate text-sm text-foreground">{title}</span>
+          ) : (
+            <span className="text-xs italic text-muted-foreground">
+              {isDefault ? "No title yet" : "— blank (uses default)"}
+            </span>
+          )}
+        </div>
+      </div>
       <div className="flex flex-none items-center gap-1">
         <button
           type="button"
           onClick={onEdit}
           aria-label={`Edit ${name}`}
           title="Edit"
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
         >
-          <Pencil className="h-3.5 w-3.5" />
+          <Pencil className="h-3.5 w-3.5" /> Edit
         </button>
         {onRemove && (
           <button
             type="button"
             onClick={onRemove}
-            aria-label={`Remove ${name} override`}
-            title="Remove override"
-            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-destructive"
+            aria-label={`Delete ${name} override`}
+            title="Delete custom article"
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" /> Delete
           </button>
         )}
       </div>
-    </div>
+    </li>
   );
 }
 

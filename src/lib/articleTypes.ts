@@ -28,31 +28,9 @@ export function emptyArticle(title = ""): Article {
   };
 }
 
-export function placeholderDefaultArticle(sourceUrl: string): Article {
-  let host = "the source";
-  try {
-    host = new URL(sourceUrl).hostname.replace(/^www\./, "");
-  } catch {
-    // ignore
-  }
+export function placeholderDefaultArticle(_sourceUrl: string): Article {
   return {
-    title: `A quick preview from ${host}`,
-    blocks: [
-      {
-        id: newId(),
-        type: "text",
-        html:
-          `Here's a short preview of an article published on ${host}. ` +
-          `It gives you the gist before you head over to read the full piece — ` +
-          `useful when you want to decide quickly whether something is worth your time.\n\n` +
-          `Tap the "View Here" button above to read the complete article on the original website.`,
-      },
-      {
-        id: newId(),
-        type: "cta",
-        label: "Read the full article",
-        url: sourceUrl,
-      },
-    ],
+    title: "",
+    blocks: [],
   };
 }

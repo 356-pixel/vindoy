@@ -14,6 +14,7 @@ import {
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import ArticleRenderer from "@/components/ArticleRenderer";
+import RichTextEditor from "@/components/RichTextEditor";
 import type { Article, Block } from "@/lib/articleTypes";
 import { newId } from "@/lib/articleTypes";
 
@@ -220,12 +221,10 @@ function BlockEditor({
       </div>
 
       {block.type === "text" && (
-        <textarea
+        <RichTextEditor
           value={block.html}
-          onChange={(e) => onChange({ html: e.target.value } as Partial<Block>)}
-          rows={6}
+          onChange={(html) => onChange({ html } as Partial<Block>)}
           placeholder="Write your paragraph…"
-          className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring"
         />
       )}
 
