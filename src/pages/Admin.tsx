@@ -259,8 +259,7 @@ function PreviewEditor({
       ? defaultArticle
       : active === "ALL"
         ? defaultArticle
-        : countries[active] ||
-          { ...defaultArticle, title: defaultArticle.title };
+        : countries[active] || emptyArticle();
 
   function updateActive(next: Article) {
     if (active === "ALL" || active === null) {
