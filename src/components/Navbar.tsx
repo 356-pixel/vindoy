@@ -63,13 +63,7 @@ export default function Navbar() {
   const isHome = location.pathname === "/";
 
   if (isHome) {
-    return (
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md sm:hidden">
-        <div className="container flex h-14 items-center justify-end">
-          <MobileMenu isHome />
-        </div>
-      </header>
-    );
+    return null;
   }
 
   return (
