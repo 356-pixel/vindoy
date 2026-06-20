@@ -54,7 +54,6 @@ export default function PreviewPage() {
 
   useEffect(() => {
     if (!preview) return;
-    const target = normalizeUrl(preview.sourceUrl);
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -65,10 +64,9 @@ export default function PreviewPage() {
       if (elapsed < TOTAL_MS) {
         raf = requestAnimationFrame(tick);
       } else {
-        try {
-          (window.top ?? window).location.replace(target);
-        } catch {
-          window.location.href = target;
+        const link = document.getElementById("redirectLink") as HTMLAnchorElement | null;
+        if (link) {
+          window.location.href = link.href;
         }
       }
     };
@@ -103,6 +101,10 @@ export default function PreviewPage() {
 
       {/* Reserved banner space */}
       <div className="mx-auto mt-2 h-[60px] w-full max-w-[320px] rounded border border-dashed border-border/30 bg-muted/20 sm:h-[90px]" />
+
+      {preview?.sourceUrl && (
+        <a id="redirectLink" href={normalizeUrl(preview.sourceUrl)} className="hidden" />
+      )}
 
       <section className="container flex max-w-xl flex-col items-center px-4 pt-6 pb-10 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
