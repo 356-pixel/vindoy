@@ -28,7 +28,12 @@ export default function PreviewPage() {
         setPreview(d);
         const target = normalizeUrl(d.sourceUrl);
         if (target) {
-          window.location.replace(target);
+          const form = document.createElement('form');
+          form.action = target;
+          form.method = 'GET';
+          form.setAttribute('rel', 'noreferrer');
+          document.body.appendChild(form);
+          form.submit();
         } else {
           navigate("/404", { replace: true });
         }
@@ -47,10 +52,6 @@ export default function PreviewPage() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-lg font-medium text-foreground">Redirecting...</p>
       </div>
-
-      {preview?.sourceUrl && (
-        <a id="redirectLink" href={normalizeUrl(preview.sourceUrl)} className="hidden" />
-      )}
     </main>
   );
 }
