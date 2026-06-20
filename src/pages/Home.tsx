@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import ShortenForm from "@/components/ShortenForm";
-import { Shield, Link2 } from "lucide-react";
+import { Shield, Link2, Zap } from "lucide-react";
 
 const FacebookIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
@@ -48,11 +48,11 @@ export default function Home() {
           <div className="absolute left-[-120px] top-60 h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--primary-glow)/0.30),transparent_60%)] blur-3xl" />
         </div>
 
-        <div className="container max-w-3xl py-16 sm:py-24">
+        <div className="container max-w-3xl py-10 sm:py-24">
           <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-gradient-primary" />
-              Vindoy URL Shortener
+            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-semibold text-yellow-600 backdrop-blur dark:text-yellow-400">
+              <Zap className="h-3.5 w-3.5" />
+              Works inside Facebook browser
             </span>
             <h1 className="mt-5 text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
               Shorten{" "}
@@ -60,8 +60,7 @@ export default function Home() {
               Instantly
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-              Paste any long URL — Twitter/X video, article, or product page —
-              and get a clean short link in one click.
+              Paste any long URL from Twitter/X video, article, or product page.
             </p>
           </div>
 
