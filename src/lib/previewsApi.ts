@@ -15,11 +15,20 @@ import type { Article, PreviewDoc } from "./articleTypes";
 
 const COL = "previews";
 
-const ALPHA = "abcdefghijklmnopqrstuvwxyz0123456789";
-export function generateSlug(len = 6): string {
+const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+export function generateSlug(len = 5): string {
   let s = "";
   for (let i = 0; i < len; i++) s += ALPHA[Math.floor(Math.random() * ALPHA.length)];
   return s;
+}
+
+export async function generateUniqueSlug(len = 5, maxAttempts = 10): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const slug = generateSlug(len);
+    const existing = await getDoc(doc(db, COL, slug));
+    if (!existing.exists()) return slug;
+  }
+  throw new Error("Could not generate a unique slug. Please try again.");
 }
 
 export async function createPreview(p: Omit<PreviewDoc, "countries"> & { countries?: Record<string, Article> }) {

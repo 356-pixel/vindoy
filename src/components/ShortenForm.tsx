@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, Link2, Copy, Check, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { createPreview, generateSlug } from "@/lib/previewsApi";
+import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 
@@ -31,7 +31,7 @@ export default function ShortenForm() {
 
     setSubmitting(true);
     try {
-      const slug = generateSlug(6);
+      const slug = await generateUniqueSlug(5);
       await createPreview({
         slug,
         sourceUrl: url,
