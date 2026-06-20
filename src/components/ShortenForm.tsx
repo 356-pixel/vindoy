@@ -72,7 +72,7 @@ export default function ShortenForm() {
             Your shortened URL
           </div>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Copy the short link and share it in
+            Copy the short link and share it
           </p>
 
           <div className="mt-5 flex flex-col items-stretch gap-3 sm:flex-row">
