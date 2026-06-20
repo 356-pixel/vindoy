@@ -50,7 +50,7 @@ export default function Home() {
 
         <div className="container max-w-3xl py-10 sm:py-24">
           <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-semibold text-yellow-600 backdrop-blur dark:text-yellow-400">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary backdrop-blur">
               <Zap className="h-3.5 w-3.5" />
               Works inside Facebook browser
             </span>
