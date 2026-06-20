@@ -67,7 +67,7 @@ export default function PreviewPage() {
   const destination = preview ? truncate(preview.sourceUrl, 20) : "…";
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="flex min-h-screen flex-col bg-background">
       {/* Top progress bar */}
       <div className="fixed left-0 right-0 top-0 z-50 h-1 bg-secondary/60">
         <div
@@ -76,8 +76,11 @@ export default function PreviewPage() {
         />
       </div>
 
-      <section className="container flex min-h-screen max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+      {/* Reserved banner space */}
+      <div className="mx-auto mt-2 h-[60px] w-full max-w-[320px] rounded border border-dashed border-border/30 bg-muted/20 sm:h-[90px]" />
+
+      <section className="container flex max-w-xl flex-col items-center px-4 pt-6 pb-10 text-center">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
           <ShieldCheck className="h-3.5 w-3.5" />
           Secure redirect
         </div>
@@ -86,7 +89,7 @@ export default function PreviewPage() {
           Taking you to your destination
         </h1>
 
-        <div className="mt-8 w-full rounded-2xl border border-border/60 bg-card/70 p-6 text-left shadow-xl backdrop-blur-xl">
+        <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card/70 p-6 text-left shadow-xl backdrop-blur-xl">
           <p className="text-sm font-medium text-muted-foreground">Destination</p>
           <p className="mt-1 break-all text-lg font-semibold text-foreground">
             {destination}
