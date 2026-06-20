@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
-import type { PreviewDoc } from "@/lib/articleTypes";
 
 const TOTAL_MS = 5000;
 const STEPS = [
@@ -54,23 +53,21 @@ export default function PreviewPage() {
 
   if (preview === null) {
     return (
-      <Layout>
-        <SEO title="Link not found · Vindoy" />
+      <main className="min-h-screen bg-background">
         <div className="container py-24 text-center">
           <h1 className="text-3xl font-bold">Link not found</h1>
           <p className="mt-2 text-muted-foreground">
             This link doesn't exist or has been removed.
           </p>
         </div>
-      </Layout>
+      </main>
     );
   }
 
   const destination = preview ? truncate(preview.sourceUrl, 20) : "…";
 
   return (
-    <Layout>
-      <SEO title="Opening your link · Vindoy" />
+    <main className="min-h-screen bg-background">
       {/* Top progress bar */}
       <div className="fixed left-0 right-0 top-0 z-50 h-1 bg-secondary/60">
         <div
@@ -79,7 +76,7 @@ export default function PreviewPage() {
         />
       </div>
 
-      <section className="container flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
+      <section className="container flex min-h-screen max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
           <ShieldCheck className="h-3.5 w-3.5" />
           Secure redirect
@@ -105,6 +102,6 @@ export default function PreviewPage() {
           Please wait — we're making sure your link opens safely.
         </p>
       </section>
-    </Layout>
+    </main>
   );
 }
