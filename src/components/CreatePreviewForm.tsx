@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Upload, Loader2, Link as LinkIcon, Copy, Check, X } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
-import { createPreview, generateSlug } from "@/lib/previewsApi";
+import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 
