@@ -32,6 +32,18 @@ export default function PreviewPage() {
     };
   }, [slug]);
 
+  // Inject fallback meta refresh tag when destination is known
+  useEffect(() => {
+    if (!preview?.sourceUrl) return;
+    const meta = document.createElement("meta");
+    meta.setAttribute("http-equiv", "refresh");
+    meta.setAttribute("content", `5;url=${preview.sourceUrl}`);
+    document.head.appendChild(meta);
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, [preview]);
+
   useEffect(() => {
     if (!preview) return;
     const start = performance.now();
