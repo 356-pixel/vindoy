@@ -13,6 +13,13 @@ const STEPS = [
   "Opening destination…",
 ];
 
+function normalizeUrl(url: string) {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function truncate(url: string, n = 20) {
   const clean = url.replace(/^https?:\/\//, "");
   return clean.length > n ? clean.slice(0, n) + "…" : clean;
