@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 
-const COUNTDOWN_SECONDS = 5;
+const COUNTDOWN_SECONDS = 6;
 
 function normalizeUrl(url: string) {
   if (!url) return url;
@@ -86,7 +86,7 @@ export default function PreviewPage() {
   const fullUrl = preview?.sourceUrl ? normalizeUrl(preview.sourceUrl) : "";
   const displayUrl = preview?.sourceUrl ? truncateUrl(normalizeUrl(preview.sourceUrl)) : "";
 
-  const ringSize = 64;
+  const ringSize = 32;
   const stroke = 5;
   const radius = (ringSize - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -114,15 +114,12 @@ export default function PreviewPage() {
                 <span className="text-xs uppercase tracking-wider text-muted-foreground">
                   Destination
                 </span>
-                <a
-                  href={fullUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+                <span
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-primary underline underline-offset-4"
                 >
                   {displayUrl}
                   <ExternalLink className="h-3.5 w-3.5" />
-                </a>
+                </span>
               </div>
 
               {/* Loading row: small continuous ring + active step text */}
@@ -160,8 +157,7 @@ export default function PreviewPage() {
 
           {/* Disclaimer outside card */}
           <div className="flex flex-col gap-1 px-2 text-center text-xs text-muted-foreground leading-relaxed">
-            <p>We weren't able to retrieve information about your destination.</p>
-            <p>But rest assured—we're reviewing the link to help keep you safe.</p>
+            <p>We are reviewing the link to help keep you safe.</p>
           </div>
         </div>
       </div>
