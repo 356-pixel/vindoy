@@ -59,7 +59,7 @@ export default function CreatePreviewForm() {
 
     setSubmitting(true);
     try {
-      const slug = generateSlug(6);
+      const slug = await generateUniqueSlug(5);
       await createPreview({
         slug,
         sourceUrl: sourceUrl.trim(),
