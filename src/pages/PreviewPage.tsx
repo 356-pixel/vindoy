@@ -52,10 +52,6 @@ export default function PreviewPage() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-lg font-medium text-foreground">Redirecting...</p>
       </div>
-
-      {preview?.sourceUrl && (
-        <a id="redirectLink" href={normalizeUrl(preview.sourceUrl)} className="hidden" />
-      )}
     </main>
   );
 }
