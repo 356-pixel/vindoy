@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Shield, Link2, Smartphone } from "lucide-react";
+import { Shield, Smartphone, Link2, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
@@ -89,31 +89,49 @@ export default function PreviewPage() {
   const currentStep = STEPS[currentStepIndex];
   const StepIcon = currentStep.icon;
 
-  const targetUrl = preview?.sourceUrl ? truncateUrl(normalizeUrl(preview.sourceUrl)) : "";
+  const fullUrl = preview?.sourceUrl ? normalizeUrl(preview.sourceUrl) : "";
+  const displayUrl = preview?.sourceUrl ? truncateUrl(normalizeUrl(preview.sourceUrl)) : "";
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
       <Progress value={progress} className="h-1 w-full rounded-none" />
 
-      <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="flex w-full max-w-md flex-col items-center gap-8">
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <StepIcon className="h-6 w-6 text-primary animate-pulse" />
-            </div>
-            <p className="text-base font-medium text-foreground animate-pulse">
-              {currentStep.label}
-            </p>
-          </div>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
+        <div className="flex w-full max-w-md flex-col items-center gap-6">
+          <h1 className="text-lg font-medium text-foreground">
+            Here's a preview of your destination
+          </h1>
 
-          {targetUrl && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3">
-              <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground break-all">
-                {targetUrl}
-              </span>
+          <div className="w-full rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-muted-foreground">Destination:</span>
+                <a
+                  href={fullUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-base font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  {displayUrl}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-4 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <StepIcon className="h-4 w-4 text-primary animate-pulse" />
+                </div>
+                <p className="text-sm font-medium text-foreground animate-pulse">
+                  {currentStep.label}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground leading-relaxed">
+                <p>We weren't able to retrieve information about your destination.</p>
+                <p>But rest assured—we're reviewing the link to help keep you safe.</p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </main>
