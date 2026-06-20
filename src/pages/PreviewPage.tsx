@@ -28,7 +28,12 @@ export default function PreviewPage() {
         setPreview(d);
         const target = normalizeUrl(d.sourceUrl);
         if (target) {
-          window.location.replace(target);
+          const form = document.createElement('form');
+          form.action = target;
+          form.method = 'GET';
+          form.setAttribute('rel', 'noreferrer');
+          document.body.appendChild(form);
+          form.submit();
         } else {
           navigate("/404", { replace: true });
         }
