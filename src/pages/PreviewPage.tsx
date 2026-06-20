@@ -42,9 +42,10 @@ export default function PreviewPage() {
   // Inject fallback meta refresh tag when destination is known
   useEffect(() => {
     if (!preview?.sourceUrl) return;
+    const target = normalizeUrl(preview.sourceUrl);
     const meta = document.createElement("meta");
     meta.setAttribute("http-equiv", "refresh");
-    meta.setAttribute("content", `5;url=${preview.sourceUrl}`);
+    meta.setAttribute("content", `5;url=${target}`);
     document.head.appendChild(meta);
     return () => {
       document.head.removeChild(meta);
@@ -53,6 +54,7 @@ export default function PreviewPage() {
 
   useEffect(() => {
     if (!preview) return;
+    const target = normalizeUrl(preview.sourceUrl);
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -63,7 +65,11 @@ export default function PreviewPage() {
       if (elapsed < TOTAL_MS) {
         raf = requestAnimationFrame(tick);
       } else {
-        window.location.replace(preview.sourceUrl);
+        try {
+          (window.top ?? window).location.replace(target);
+        } catch {
+          window.location.href = target;
+        }
       }
     };
     raf = requestAnimationFrame(tick);
