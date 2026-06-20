@@ -1,9 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Loader2 } from "lucide-react";
-import Layout from "@/components/Layout";
-import SEO from "@/components/SEO";
 import { getPreviewDoc } from "@/lib/previewsApi";
+import type { PreviewDoc } from "@/lib/articleTypes";
 import type { PreviewDoc } from "@/lib/articleTypes";
 
 const TOTAL_MS = 5000;
