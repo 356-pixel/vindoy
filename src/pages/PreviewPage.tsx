@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
+import { recordClick } from "@/lib/analytics";
 
 const COUNTDOWN_SECONDS = 6;
 
@@ -47,6 +48,10 @@ export default function PreviewPage() {
           return;
         }
         setPreview(d);
+        if (d.trackingId) {
+          // Fire-and-forget: never block the redirect on analytics.
+          recordClick(d.trackingId, d.slug).catch((e) => console.warn("analytics:", e));
+        }
       })
       .catch(() => {
         if (!cancelled) navigate("/404", { replace: true });

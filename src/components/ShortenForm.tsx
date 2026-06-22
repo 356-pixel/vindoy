@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
+import { isValidTrackingId, recordLinkGenerated } from "@/lib/analytics";
 
 // 1x1 transparent gif — placeholder so backend image field is satisfied.
 const PLACEHOLDER_IMG =
