@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
-import { isValidTrackingId, recordLinkGenerated } from "@/lib/analytics";
+import { canonicalTrackingId, recordLinkGenerated } from "@/lib/analytics";
 
 // 1x1 transparent gif — placeholder so backend image field is satisfied.
 const PLACEHOLDER_IMG =
@@ -36,7 +36,7 @@ export default function ShortenForm() {
     try {
       const slug = await generateUniqueSlug(5);
       const tid = trackingId.trim();
-      const validTid = isValidTrackingId(tid) ? tid : undefined;
+      const validTid = canonicalTrackingId(tid) ?? undefined;
       await createPreview({
         slug,
         sourceUrl: url,

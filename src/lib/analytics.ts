@@ -1,5 +1,6 @@
 import { db } from "./firebase";
 import { doc, setDoc, serverTimestamp, increment } from "firebase/firestore";
+import { ALLOWED_TRACKING_IDS } from "./adminConfig";
 
 // Each batch is a 4-hour window. UTC-based to match Cloud Scheduler.
 export const BATCH_HOURS = 4;
@@ -35,11 +36,20 @@ export function nextBatchBoundary(d: Date = new Date()): Date {
   return next;
 }
 
-/** Validates a tracking id (admin-issued). Loose format: alnum+dash+underscore, 2-64 chars. */
-export function isValidTrackingId(id: string | undefined | null): id is string {
-  if (!id) return false;
+/** Returns canonical (admin-issued) tracking id if input matches the allow-list, else null. */
+export function canonicalTrackingId(id: string | undefined | null): string | null {
+  if (!id) return null;
   const t = String(id).trim();
-  return /^[A-Za-z0-9_-]{2,64}$/.test(t);
+  if (!/^[A-Za-z0-9_-]{2,64}$/.test(t)) return null;
+  const hit = (ALLOWED_TRACKING_IDS as readonly string[]).find(
+    (a) => a.toLowerCase() === t.toLowerCase(),
+  );
+  return hit ?? null;
+}
+
+/** Validates a tracking id against the admin allow-list. */
+export function isValidTrackingId(id: string | undefined | null): id is string {
+  return canonicalTrackingId(id) !== null;
 }
 
 /**
