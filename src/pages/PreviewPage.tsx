@@ -5,8 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
+import bannerAsset from "@/assets/banner.png.asset.json";
 
-const COUNTDOWN_SECONDS = 6;
+const COUNTDOWN_SECONDS = 5;
 
 function normalizeUrl(url: string) {
   if (!url) return url;
@@ -26,8 +27,8 @@ function redirectAnonymously(target: string) {
 
 function truncateUrl(url: string) {
   const clean = url.replace(/^https?:\/\//i, "");
-  if (clean.length <= 20) return clean;
-  return clean.slice(0, 20) + "...";
+  if (clean.length <= 30) return clean;
+  return clean.slice(0, 30) + "...";
 }
 
 const STEPS = ["Checking link", "Optimizing for FB browser", "Opening destination"];
@@ -114,6 +115,15 @@ export default function PreviewPage() {
 
           <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center gap-5">
+              {/* Banner ad: 300x250 */}
+              <div className="flex w-full justify-center">
+                <img
+                  src={bannerAsset.url}
+                  alt="Advertisement"
+                  className="h-[250px] w-[300px] object-cover rounded-lg"
+                />
+              </div>
+
               {/* Destination */}
               <div className="flex w-full flex-col items-center gap-1">
                 <span className="text-xs uppercase tracking-wider text-muted-foreground">
