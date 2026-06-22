@@ -101,9 +101,15 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <Progress value={progress} className="h-1 w-full rounded-none" />
 
-      {/* Ad slot: 320x90 desktop, 320x60 mobile */}
+      {/* Banner ad */}
       <div className="flex w-full justify-center pt-3">
-        <div aria-label="Advertisement slot" className="h-[60px] w-[320px] md:h-[90px]" />
+        <a href="https://vindoy.com" target="_blank" rel="noopener noreferrer" aria-label="Advertisement">
+          <img
+            src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
+            alt="Advertisement"
+            className="h-[60px] w-[320px] object-cover md:h-[90px]"
+          />
+        </a>
       </div>
 
       <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-10">
@@ -114,14 +120,6 @@ export default function PreviewPage() {
 
           <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center gap-5">
-              {/* Banner ad: 300x250 */}
-              <div className="flex w-full justify-center">
-                <img
-                  src={bannerAsset.url}
-                  alt="Advertisement"
-                  className="h-[250px] w-[300px] object-cover rounded-lg"
-                />
-              </div>
 
               {/* Destination */}
               <div className="flex w-full flex-col items-center gap-1">
