@@ -1,14 +1,19 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, collectionGroup, getDocs, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import { RETENTION_DAYS, utcDateString } from "./analytics";
 
+/**
+ * Aggregated analytics doc, stored at:
+ *   analytics_stats/{trackingId}/days/{YYYY-MM-DD}
+ *
+ * Per-link breakdown lives in `perLinkBreakdown` as a map keyed by slug.
+ */
 export type AnalyticsStatDoc = {
   trackingId: string;
   date: string; // YYYY-MM-DD
-  hourBatch: number; // 0..5
   totalClicks: number;
   totalLinksGenerated: number;
-  links?: Record<string, { clicks?: number; generated?: number }>;
+  perLinkBreakdown?: Record<string, { clicks?: number; generated?: number }>;
   updatedAt?: unknown;
 };
 
@@ -36,48 +41,41 @@ export async function fetchAnalytics(opts: {
   const from = opts.fromDate && opts.fromDate > retentionFloor ? opts.fromDate : retentionFloor;
   const to = opts.toDate ?? utcDateString();
 
-  const constraints = [where("date", ">=", from), where("date", "<=", to)];
-  if (opts.trackingId) constraints.push(where("trackingId", "==", opts.trackingId));
+  // When filtering by a single tracking id, query its `days` subcollection directly
+  // — cheaper than a collectionGroup scan.
+  const q = opts.trackingId
+    ? query(
+        collection(db, "analytics_stats", opts.trackingId, "days"),
+        where("date", ">=", from),
+        where("date", "<=", to),
+      )
+    : query(
+        collectionGroup(db, "days"),
+        where("date", ">=", from),
+        where("date", "<=", to),
+      );
 
-  const q = query(collection(db, "analytics_stats"), ...constraints);
   const snap = await getDocs(q);
   return snap.docs.map((d) => d.data() as AnalyticsStatDoc);
 }
 
-/** Aggregates docs (across hourBatches) into (date, trackingId) rows. */
+/** Shapes per-day docs into the rows the dashboard already renders. */
 export function rollupByDateTracking(docs: AnalyticsStatDoc[]): DailyTrackingRow[] {
-  const map = new Map<string, DailyTrackingRow>();
-  for (const d of docs) {
-    const key = `${d.date}__${d.trackingId}`;
-    let row = map.get(key);
-    if (!row) {
-      row = {
-        date: d.date,
-        trackingId: d.trackingId,
-        linksGenerated: 0,
-        totalClicks: 0,
-        links: [],
-      };
-      map.set(key, row);
-    }
-    row.linksGenerated += d.totalLinksGenerated || 0;
-    row.totalClicks += d.totalClicks || 0;
-    if (d.links) {
-      const bySlug = new Map(row.links.map((l) => [l.slug, l]));
-      for (const [slug, v] of Object.entries(d.links)) {
-        const existing = bySlug.get(slug);
-        if (existing) existing.clicks += v.clicks || 0;
-        else {
-          const link = { slug, clicks: v.clicks || 0 };
-          bySlug.set(slug, link);
-          row.links.push(link);
-        }
-      }
-    }
-  }
-  const rows = Array.from(map.values());
+  const rows: DailyTrackingRow[] = docs.map((d) => {
+    const links = Object.entries(d.perLinkBreakdown || {}).map(([slug, v]) => ({
+      slug,
+      clicks: v.clicks || 0,
+    }));
+    links.sort((a, b) => b.clicks - a.clicks);
+    return {
+      date: d.date,
+      trackingId: d.trackingId,
+      linksGenerated: d.totalLinksGenerated || 0,
+      totalClicks: d.totalClicks || 0,
+      links,
+    };
+  });
   rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  for (const r of rows) r.links.sort((a, b) => b.clicks - a.clicks);
   return rows;
 }
 

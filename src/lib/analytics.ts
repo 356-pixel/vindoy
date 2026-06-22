@@ -17,6 +17,11 @@ export function currentHourBatch(d: Date = new Date()): number {
   return Math.floor(d.getUTCHours() / BATCH_HOURS);
 }
 
+/** Bucket id used inside the per-tracking-id click_buffer subcollection: YYYY-MM-DD-HH (UTC hour). */
+export function currentDateHour(d: Date = new Date()): string {
+  return `${utcDateString(d)}-${String(d.getUTCHours()).padStart(2, "0")}`;
+}
+
 export function nextBatchBoundary(d: Date = new Date()): Date {
   const next = new Date(d);
   next.setUTCMinutes(0, 0, 0);
@@ -38,28 +43,35 @@ export function isValidTrackingId(id: string | undefined | null): id is string {
 }
 
 /**
- * Raw counter doc id: trackingId__date__hourBatch__slug
- * Stores incremental clicks & link generation marker until the Cloud Function aggregates it.
- * Only docs for valid trackingIds are ever written.
+ * Raw click buffer path:
+ *   click_buffer/{trackingId}/hours/{YYYY-MM-DD-HH}
+ *
+ * Fields:
+ *   clickCount        — incremented per click
+ *   linksGenerated    — incremented per generated link
+ *   slugs.<slug>.clicks    — per-link click counter
+ *   slugs.<slug>.generated — per-link generation counter
+ *   processed         — set to true by the 4-hour aggregator (never deleted here)
+ *   updatedAt         — serverTimestamp
+ *
+ * Only docs for valid trackingIds are ever written. This collapses what used to be
+ * one-doc-per-slug-per-batch into a single bucket per tracking-id per UTC hour.
  */
-function rawDocId(trackingId: string, date: string, batch: number, slug: string) {
-  return `${trackingId}__${date}__${batch}__${slug}`;
+function bufferRef(trackingId: string, dateHour: string) {
+  return doc(db, "click_buffer", trackingId, "hours", dateHour);
 }
 
 export async function recordLinkGenerated(trackingId: string, slug: string): Promise<void> {
   if (!isValidTrackingId(trackingId)) return;
   const now = new Date();
-  const date = utcDateString(now);
-  const batch = currentHourBatch(now);
-  const id = rawDocId(trackingId, date, batch, slug);
   await setDoc(
-    doc(db, "raw_counters", id),
+    bufferRef(trackingId, currentDateHour(now)),
     {
       trackingId,
-      slug,
-      date,
-      hourBatch: batch,
+      date: utcDateString(now),
+      hour: now.getUTCHours(),
       linksGenerated: increment(1),
+      [`slugs.${slug}.generated`]: increment(1),
       processed: false,
       updatedAt: serverTimestamp(),
     },
@@ -70,17 +82,14 @@ export async function recordLinkGenerated(trackingId: string, slug: string): Pro
 export async function recordClick(trackingId: string, slug: string): Promise<void> {
   if (!isValidTrackingId(trackingId)) return;
   const now = new Date();
-  const date = utcDateString(now);
-  const batch = currentHourBatch(now);
-  const id = rawDocId(trackingId, date, batch, slug);
   await setDoc(
-    doc(db, "raw_counters", id),
+    bufferRef(trackingId, currentDateHour(now)),
     {
       trackingId,
-      slug,
-      date,
-      hourBatch: batch,
-      clicks: increment(1),
+      date: utcDateString(now),
+      hour: now.getUTCHours(),
+      clickCount: increment(1),
+      [`slugs.${slug}.clicks`]: increment(1),
       processed: false,
       updatedAt: serverTimestamp(),
     },

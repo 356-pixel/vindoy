@@ -1,17 +1,26 @@
 /**
- * Vindoy analytics aggregation.
+ * Vindoy analytics — Cloud Functions.
  *
- * Runs every 4 hours via Cloud Scheduler. Reads unprocessed docs from
- * `raw_counters`, aggregates per (trackingId, date, hourBatch) into
- * `analytics_stats`, then deletes the processed raw docs (resetting their
- * counters). Only data within the last 60 days is touched; anything older
- * is purged unprocessed.
+ *  • aggregateAnalytics  — every 4 hours. Reads unprocessed click_buffer hour
+ *    buckets, merges them into analytics_stats/{trackingId}/days/{date} using
+ *    FieldValue.increment(), then marks each buffer doc `processed: true`.
+ *    Raw docs are NOT deleted here — they stay for safety/debug.
+ *
+ *  • cleanupRawBuffer    — once a day. Deletes click_buffer hour buckets that
+ *    are both `processed: true` AND older than 60 days.
+ *
+ * Data model
+ *   click_buffer/{trackingId}/hours/{YYYY-MM-DD-HH}
+ *     { clickCount, linksGenerated, slugs: {<slug>: {clicks, generated}},
+ *       processed, date, hour, updatedAt }
+ *
+ *   analytics_stats/{trackingId}/days/{YYYY-MM-DD}
+ *     { trackingId, date, totalClicks, totalLinksGenerated,
+ *       perLinkBreakdown: {<slug>: {clicks, generated}}, updatedAt }
  *
  * Deploy:
  *   cd functions && npm install
  *   firebase deploy --only functions
- *
- * The schedule uses Cloud Scheduler automatically via onSchedule().
  */
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -23,8 +32,8 @@ const db = getFirestore();
 
 const BATCH_HOURS = 4;
 const RETENTION_DAYS = 60;
-const RAW = "raw_counters";
-const STATS = "analytics_stats";
+const BUFFER_GROUP = "hours";       // collectionGroup id under click_buffer/{tid}/hours
+const STATS_ROOT = "analytics_stats";
 
 function utcDateString(d) {
   const y = d.getUTCFullYear();
@@ -33,12 +42,15 @@ function utcDateString(d) {
   return `${y}-${m}-${day}`;
 }
 
-function daysAgo(days) {
+function daysAgoDateStr(days) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - days);
   return utcDateString(d);
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// 4-hour aggregator
+// ────────────────────────────────────────────────────────────────────────────
 exports.aggregateAnalytics = onSchedule(
   {
     schedule: `every ${BATCH_HOURS} hours`,
@@ -47,102 +59,127 @@ exports.aggregateAnalytics = onSchedule(
     timeoutSeconds: 540,
   },
   async () => {
-    const retentionFloor = daysAgo(RETENTION_DAYS);
-
-    // 1. Purge anything older than retention without aggregating it.
-    const stale = await db
-      .collection(RAW)
-      .where("date", "<", retentionFloor)
-      .limit(500)
-      .get();
-    if (!stale.empty) {
-      const purge = db.batch();
-      stale.docs.forEach((d) => purge.delete(d.ref));
-      await purge.commit();
-      console.log(`Purged ${stale.size} stale raw counters`);
-    }
-
-    // 2. Pull unprocessed docs within retention.
     const snap = await db
-      .collection(RAW)
+      .collectionGroup(BUFFER_GROUP)
       .where("processed", "==", false)
-      .where("date", ">=", retentionFloor)
       .get();
 
     if (snap.empty) {
-      console.log("No raw counters to aggregate");
+      console.log("aggregateAnalytics: no unprocessed buffer docs");
       return;
     }
 
-    // Aggregate per (trackingId, date, hourBatch).
+    // Group buffer docs by (trackingId, date) so each stats doc is touched once.
     const buckets = new Map();
-    for (const doc of snap.docs) {
-      const data = doc.data();
-      const key = `${data.trackingId}__${data.date}__${data.hourBatch}`;
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      if (!data.trackingId || !data.date) continue;
+      const key = `${data.trackingId}__${data.date}`;
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = {
           trackingId: data.trackingId,
           date: data.date,
-          hourBatch: data.hourBatch,
           totalClicks: 0,
           totalLinksGenerated: 0,
-          links: {},
-          processedRefs: [],
+          slugs: {}, // slug -> { clicks, generated }
+          refs: [],
         };
         buckets.set(key, bucket);
       }
-      const clicks = data.clicks || 0;
-      const links = data.linksGenerated || 0;
-      bucket.totalClicks += clicks;
-      bucket.totalLinksGenerated += links;
-      const slug = data.slug || "_unknown";
-      const slot = bucket.links[slug] || { clicks: 0, generated: 0 };
-      slot.clicks += clicks;
-      slot.generated += links;
-      bucket.links[slug] = slot;
-      bucket.processedRefs.push(doc.ref);
+      bucket.totalClicks += data.clickCount || 0;
+      bucket.totalLinksGenerated += data.linksGenerated || 0;
+      const slugs = data.slugs || {};
+      for (const [slug, v] of Object.entries(slugs)) {
+        const slot = bucket.slugs[slug] || { clicks: 0, generated: 0 };
+        slot.clicks += (v && v.clicks) || 0;
+        slot.generated += (v && v.generated) || 0;
+        bucket.slugs[slug] = slot;
+      }
+      bucket.refs.push(docSnap.ref);
     }
 
-    let totalDeleted = 0;
+    let markedProcessed = 0;
     for (const bucket of buckets.values()) {
-      const statsId = `${bucket.trackingId}__${bucket.date}__${bucket.hourBatch}`;
-      const statsRef = db.collection(STATS).doc(statsId);
+      const statsRef = db
+        .collection(STATS_ROOT)
+        .doc(bucket.trackingId)
+        .collection("days")
+        .doc(bucket.date);
 
-      // Build merge payload using FieldValue.increment so re-runs accumulate safely.
-      const linksUpdate = {};
-      for (const [slug, v] of Object.entries(bucket.links)) {
-        linksUpdate[`links.${slug}.clicks`] = FieldValue.increment(v.clicks);
-        linksUpdate[`links.${slug}.generated`] = FieldValue.increment(v.generated);
-      }
-
+      // Ensure identifying fields exist (first write only).
       await statsRef.set(
-        {
-          trackingId: bucket.trackingId,
-          date: bucket.date,
-          hourBatch: bucket.hourBatch,
-        },
+        { trackingId: bucket.trackingId, date: bucket.date },
         { merge: true },
       );
-      await statsRef.update({
+
+      const update = {
         totalClicks: FieldValue.increment(bucket.totalClicks),
         totalLinksGenerated: FieldValue.increment(bucket.totalLinksGenerated),
         updatedAt: FieldValue.serverTimestamp(),
-        ...linksUpdate,
-      });
+      };
+      for (const [slug, v] of Object.entries(bucket.slugs)) {
+        update[`perLinkBreakdown.${slug}.clicks`] = FieldValue.increment(v.clicks);
+        update[`perLinkBreakdown.${slug}.generated`] = FieldValue.increment(v.generated);
+      }
+      await statsRef.update(update);
 
-      // Delete the processed raw docs (resets counters). Firestore batch caps at 500.
-      const refs = bucket.processedRefs;
+      // Mark buffer docs as processed (do NOT delete).
+      const refs = bucket.refs;
       for (let i = 0; i < refs.length; i += 450) {
         const batch = db.batch();
-        refs.slice(i, i + 450).forEach((r) => batch.delete(r));
+        refs.slice(i, i + 450).forEach((r) =>
+          batch.update(r, {
+            processed: true,
+            processedAt: FieldValue.serverTimestamp(),
+          }),
+        );
         await batch.commit();
+        markedProcessed += Math.min(450, refs.length - i);
       }
-      totalDeleted += refs.length;
     }
 
     console.log(
-      `Aggregated ${snap.size} raw counters into ${buckets.size} stat buckets; deleted ${totalDeleted}`,
+      `aggregateAnalytics: merged ${snap.size} buffer docs into ${buckets.size} day buckets; marked ${markedProcessed} processed`,
+    );
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Daily cleanup — deletes processed buffer docs older than 60 days
+// ────────────────────────────────────────────────────────────────────────────
+exports.cleanupRawBuffer = onSchedule(
+  {
+    schedule: "every 24 hours",
+    timeZone: "Etc/UTC",
+    memory: "256MiB",
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const cutoff = daysAgoDateStr(RETENTION_DAYS);
+
+    let totalDeleted = 0;
+    // Page through to stay within batch limits even with a large backlog.
+    // We only ever touch docs that are BOTH processed AND older than cutoff.
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const snap = await db
+        .collectionGroup(BUFFER_GROUP)
+        .where("processed", "==", true)
+        .where("date", "<", cutoff)
+        .limit(450)
+        .get();
+      if (snap.empty) break;
+
+      const batch = db.batch();
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      totalDeleted += snap.size;
+      if (snap.size < 450) break;
+    }
+
+    console.log(
+      `cleanupRawBuffer: deleted ${totalDeleted} processed buffer docs older than ${cutoff}`,
     );
   },
 );
