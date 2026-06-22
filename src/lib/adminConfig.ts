@@ -5,6 +5,11 @@
 export const SHAREABLE_DOMAIN = "https://vindoy.com";
 export const ADMIN_PASSWORD = "vindoy2026"; // <- change me
 
+// Admin-issued tracking IDs. Only IDs in this list are accepted by the
+// shortener and tracked in the analytics pipeline. Anything else is ignored.
+// Add new IDs here as you issue them.
+export const ALLOWED_TRACKING_IDS = ["PML"] as const;
+
 // Curated list of supported countries for per-country article overrides.
 // "ALL" is the implicit default and is not in this list.
 // Priority countries shown first in the admin (in this exact order).
