@@ -34,13 +34,20 @@ export default function ShortenForm() {
     setSubmitting(true);
     try {
       const slug = await generateUniqueSlug(5);
+      const tid = trackingId.trim();
+      const validTid = isValidTrackingId(tid) ? tid : undefined;
       await createPreview({
         slug,
         sourceUrl: url,
         image: PLACEHOLDER_IMG,
         createdAt: new Date().toISOString(),
         default: placeholderDefaultArticle(url),
+        ...(validTid ? { trackingId: validTid } : {}),
       });
+      if (validTid) {
+        // Fire-and-forget: analytics must never block link generation.
+        recordLinkGenerated(validTid, slug).catch((e) => console.warn("analytics:", e));
+      }
       setGenerated(`${SHAREABLE_DOMAIN}/${slug}`);
       setCopied(false);
     } catch (err) {
