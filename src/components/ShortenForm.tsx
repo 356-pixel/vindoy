@@ -141,7 +141,6 @@ export default function ShortenForm() {
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
                 className="h-10 w-full rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
-              href:text-muted-foreground"
               />
             </div>
           )}
