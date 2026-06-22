@@ -1,0 +1,15 @@
+{
+  "name": "vindoy-functions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vindoy analytics aggregation – batches raw click counters into analytics_stats every 4 hours.",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  }
+}

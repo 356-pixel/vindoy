@@ -1,21 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
-import { CheckCircle2, Circle, FileText, Loader2, Lock, LogOut, Plus, Save, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { ADMIN_PASSWORD } from "@/lib/adminConfig";
 import {
-  deleteArticle,
-  getActiveArticleId,
-  listArticles,
-  newArticleId,
-  saveArticle,
-  setActiveArticleId,
-  type ArticleMeta,
-} from "@/lib/articlesApi";
-import type { Article } from "@/lib/articleTypes";
-import { emptyArticle } from "@/lib/articleTypes";
-import ArticleEditor from "@/components/ArticleEditor";
+  ChevronDown,
+  Clock,
+  Filter,
+  Loader2,
+  Lock,
+  LogOut,
+  MousePointerClick,
+  RefreshCw,
+  Search,
+  Link as LinkIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { ADMIN_PASSWORD, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
+import {
+  fetchAnalytics,
+  rollupByDateTracking,
+  summariseTotals,
+  type AnalyticsStatDoc,
+  type DailyTrackingRow,
+} from "@/lib/analyticsApi";
+import { nextBatchBoundary, RETENTION_DAYS, utcDateString } from "@/lib/analytics";
 
 const SESSION_KEY = "vindoy_admin_auth";
 
@@ -31,9 +38,9 @@ export default function Admin() {
   return (
     <Layout>
       <SEO title="Admin · Vindoy" />
-      <div className="container max-w-5xl py-8">
+      <div className="container max-w-6xl py-8">
         {authed ? (
-          <AdminDashboard
+          <AnalyticsDashboard
             onLogout={() => {
               try {
                 sessionStorage.removeItem(SESSION_KEY);
@@ -44,16 +51,10 @@ export default function Admin() {
             }}
           />
         ) : (
-          <LoginGate
-            onSuccess={() => {
-              try {
-                sessionStorage.setItem(SESSION_KEY, "1");
-              } catch {
-                // ignore
-              }
-              setAuthed(true);
-            }}
-          />
+          <LoginGate onSuccess={() => {
+            try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
+            setAuthed(true);
+          }} />
         )}
       </div>
     </Layout>
@@ -104,149 +105,109 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function formatDate(ms: number) {
+function defaultFromDate(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 29);
+  return utcDateString(d);
+}
+
+const CACHE_KEY = "vindoy_admin_analytics_cache_v1";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min — well under the 4h batch cycle.
+
+type CacheBlob = { ts: number; key: string; data: AnalyticsStatDoc[] };
+
+function loadCache(key: string): AnalyticsStatDoc[] | null {
   try {
-    return new Date(ms).toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CacheBlob;
+    if (parsed.key !== key) return null;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return parsed.data;
   } catch {
-    return "";
+    return null;
   }
 }
 
-function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+function saveCache(key: string, data: AnalyticsStatDoc[]) {
+  try {
+    const blob: CacheBlob = { ts: Date.now(), key, data };
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(blob));
+  } catch {
+    // ignore
+  }
+}
+
+function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate());
+  const [toDate, setToDate] = useState<string>(utcDateString());
+  const [trackingFilter, setTrackingFilter] = useState<string>("");
+  const [docs, setDocs] = useState<AnalyticsStatDoc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [articles, setArticles] = useState<ArticleMeta[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [openRow, setOpenRow] = useState<string | null>(null);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Article>(emptyArticle());
-  const [isNew, setIsNew] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const cacheKey = `${fromDate}|${toDate}|${trackingFilter.trim().toLowerCase()}`;
 
-  async function refresh() {
-    const [list, active] = await Promise.all([listArticles(), getActiveArticleId()]);
-    setArticles(list);
-    setActiveId(active);
-    return { list, active };
-  }
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await refresh();
-      } catch (e) {
-        console.error(e);
-        toast.error("Could not load articles");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const editing = useMemo(
-    () => articles.find((a) => a.id === editingId),
-    [articles, editingId],
-  );
-
-  function startNew() {
-    setIsNew(true);
-    setEditingId(newArticleId());
-    setDraft(emptyArticle());
-  }
-
-  function startEdit(meta: ArticleMeta) {
-    setIsNew(false);
-    setEditingId(meta.id);
-    setDraft(meta.article);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setIsNew(false);
-    setDraft(emptyArticle());
-  }
-
-  async function save() {
-    if (!editingId) return;
-    setSaving(true);
+  async function load(forceFresh = false) {
+    setLoading(true);
     try {
-      await saveArticle(editingId, draft, isNew);
-      // If this is the first article, mark it active automatically
-      const list = await listArticles();
-      let active = activeId;
-      if (!active && list.length > 0) {
-        await setActiveArticleId(editingId);
-        active = editingId;
+      if (!forceFresh) {
+        const cached = loadCache(cacheKey);
+        if (cached) {
+          setDocs(cached);
+          setLoading(false);
+          return;
+        }
       }
-      setArticles(list);
-      setActiveId(active);
-      setIsNew(false);
-      toast.success("Article saved");
+      const data = await fetchAnalytics({
+        fromDate,
+        toDate,
+        trackingId: trackingFilter.trim() || undefined,
+      });
+      setDocs(data);
+      saveCache(cacheKey, data);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      console.error("Save failed:", e);
-      toast.error(`Could not save: ${msg}`);
+      console.error(e);
+      toast.error("Could not load analytics");
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   }
 
-  async function makeActive(id: string) {
-    try {
-      await setActiveArticleId(id);
-      setActiveId(id);
-      toast.success("Now shown on all preview links");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Could not update: ${msg}`);
-    }
-  }
+  // Reload on filter change.
+  useEffect(() => {
+    load(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, toDate, trackingFilter]);
 
-  async function remove(meta: ArticleMeta) {
-    if (!confirm(`Delete "${meta.article.title || "Untitled"}"? This cannot be undone.`)) return;
-    try {
-      await deleteArticle(meta.id);
-      if (editingId === meta.id) cancelEdit();
-      const { active } = await refresh();
-      if (active === meta.id) {
-        toast.message("Heads up: the active article was deleted. Pick a new one.");
-      } else {
-        toast.success("Deleted");
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Could not delete: ${msg}`);
-    }
-  }
+  const todaySummary = useMemo(() => {
+    const today = utcDateString();
+    return summariseTotals(docs.filter((d) => d.date === today));
+  }, [docs]);
 
-  if (loading) {
-    return (
-      <div className="grid place-items-center py-20 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </div>
-    );
-  }
+  const monthSummary = useMemo(() => {
+    const now = new Date();
+    const prefix = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    return summariseTotals(docs.filter((d) => d.date.startsWith(prefix)));
+  }, [docs]);
+
+  const rows = useMemo<DailyTrackingRow[]>(() => rollupByDateTracking(docs), [docs]);
 
   return (
     <>
-      <header className="mb-5 flex items-center justify-between gap-2">
+      <header className="mb-6 flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg font-semibold">Articles</h1>
+          <h1 className="text-xl font-semibold">Analytics</h1>
           <p className="text-xs text-muted-foreground">
-            Pick one article to show on every preview link.
+            Tracking-ID links only · data older than {RETENTION_DAYS} days is excluded
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={startNew}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            onClick={() => load(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-secondary"
           >
-            <Plus className="h-3.5 w-3.5" /> New article
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
           <button
             onClick={onLogout}
@@ -257,114 +218,195 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       </header>
 
-      <section className="mb-6 rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3 text-sm font-medium">
-          All articles ({articles.length})
+      {/* SECTION A: SUMMARY CARDS */}
+      <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <SummaryCard
+          label="Today"
+          links={todaySummary.links}
+          clicks={todaySummary.clicks}
+          accent="bg-primary/10 text-primary"
+        />
+        <SummaryCard
+          label="This month"
+          links={monthSummary.links}
+          clicks={monthSummary.clicks}
+          accent="bg-secondary text-foreground"
+        />
+      </section>
+
+      {/* SECTION B: COUNTDOWN */}
+      <BatchCountdown />
+
+      {/* SECTION C: FILTERS */}
+      <section className="mb-5 rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+          <Filter className="h-3.5 w-3.5" /> Filters
         </div>
-        {articles.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-            No articles yet. Click <span className="font-medium">New article</span> to write your first one.
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label className="text-xs font-medium text-muted-foreground">
+            From date
+            <input
+              type="date"
+              value={fromDate}
+              max={toDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="text-xs font-medium text-muted-foreground">
+            To date
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate}
+              max={utcDateString()}
+              onChange={(e) => setToDate(e.target.value)}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Tracking ID
+            <div className="relative mt-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={trackingFilter}
+                placeholder="exact match"
+                onChange={(e) => setTrackingFilter(e.target.value)}
+                className="w-full rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </label>
+        </div>
+      </section>
+
+      {/* SECTION D + E: TABLE WITH EXPANDABLE ROWS */}
+      <section className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1fr] gap-2 border-b border-border bg-secondary/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <span />
+          <span>Date</span>
+          <span>Tracking ID</span>
+          <span className="text-right">Links generated</span>
+          <span className="text-right">Total clicks</span>
+        </div>
+        {loading ? (
+          <div className="grid place-items-center py-16 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+            No analytics yet for this range. New tracked links will appear here after the next batch.
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {articles.map((meta) => {
-              const isActive = activeId === meta.id;
-              const isEditing = editingId === meta.id;
+            {rows.map((row) => {
+              const key = `${row.date}__${row.trackingId}`;
+              const open = openRow === key;
               return (
-                <li
-                  key={meta.id}
-                  className={`flex flex-wrap items-center gap-3 px-4 py-3 ${
-                    isEditing ? "bg-secondary/40" : ""
-                  }`}
-                >
+                <li key={key}>
                   <button
                     type="button"
-                    onClick={() => makeActive(meta.id)}
-                    title={isActive ? "Currently active" : "Make this the active article"}
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-secondary"
+                    onClick={() => setOpenRow(open ? null : key)}
+                    className="grid w-full grid-cols-[1.5rem_1fr_1fr_1fr_1fr] items-center gap-2 px-3 py-3 text-left text-sm hover:bg-secondary/40"
                   >
-                    {isActive ? (
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
+                    <ChevronDown
+                      className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+                    />
+                    <span className="font-medium">{row.date}</span>
+                    <span className="truncate font-mono text-xs">{row.trackingId}</span>
+                    <span className="text-right tabular-nums">{row.linksGenerated.toLocaleString()}</span>
+                    <span className="text-right tabular-nums font-semibold">{row.totalClicks.toLocaleString()}</span>
                   </button>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <p className="truncate text-sm font-medium">
-                        {meta.article.title || "Untitled article"}
-                      </p>
-                      {isActive && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                          Active
-                        </span>
+                  {open && (
+                    <div className="border-t border-border bg-background/40 px-4 py-3">
+                      {row.links.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No per-link breakdown for this batch yet.</p>
+                      ) : (
+                        <ul className="divide-y divide-border/60">
+                          {row.links.map((l) => (
+                            <li key={l.slug} className="flex items-center justify-between gap-3 py-2 text-sm">
+                              <a
+                                href={`${SHAREABLE_DOMAIN}/${l.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex min-w-0 items-center gap-1.5 truncate text-primary hover:underline"
+                              >
+                                <LinkIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{SHAREABLE_DOMAIN.replace(/^https?:\/\//, "")}/{l.slug}</span>
+                              </a>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                <MousePointerClick className="h-3 w-3" />
+                                {l.clicks.toLocaleString()}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Published {formatDate(meta.createdAt)}
-                      {meta.updatedAt && meta.updatedAt - meta.createdAt > 1000 ? (
-                        <> · Updated {formatDate(meta.updatedAt)}</>
-                      ) : null}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(meta)}
-                      className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => remove(meta)}
-                      aria-label="Delete"
-                      className="grid h-8 w-8 place-items-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-secondary hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
       </section>
-
-      {editingId && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">
-              {isNew ? "New article" : `Editing: ${editing?.article.title || "Untitled"}`}
-            </h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={cancelEdit}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                Save
-              </button>
-            </div>
-          </div>
-
-          <ArticleEditor
-            value={draft}
-            onChange={setDraft}
-            countryLabel={isNew ? "New article" : "Existing article"}
-          />
-        </section>
-      )}
     </>
+  );
+}
+
+function SummaryCard({
+  label,
+  links,
+  clicks,
+  accent,
+}: {
+  label: string;
+  links: number;
+  clicks: number;
+  accent: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className={`mb-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent}`}>{label}</div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Links generated</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{links.toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Total clicks</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{clicks.toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function BatchCountdown() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const target = useMemo(() => nextBatchBoundary(new Date(now)).getTime(), [now]);
+  const remaining = Math.max(0, target - now);
+  const totalSec = Math.floor(remaining / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return (
+    <section className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/60 px-4 py-3">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Clock className="h-4 w-4" />
+        Next analytics update in
+      </div>
+      <div className="text-lg font-semibold tabular-nums">
+        {pad(h)}:{pad(m)}:{pad(s)}
+      </div>
+    </section>
   );
 }
