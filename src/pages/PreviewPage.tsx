@@ -6,7 +6,7 @@ import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
 
-const COUNTDOWN_SECONDS = 5;
+const COUNTDOWN_SECONDS = 6;
 
 function normalizeUrl(url: string) {
   if (!url) return url;
