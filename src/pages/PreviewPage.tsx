@@ -7,7 +7,7 @@ import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
 import bannerAsset from "@/assets/banner.png.asset.json";
 
-const COUNTDOWN_SECONDS = 6;
+const COUNTDOWN_SECONDS = 5;
 
 function normalizeUrl(url: string) {
   if (!url) return url;
