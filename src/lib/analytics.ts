@@ -36,11 +36,14 @@ export function nextBatchBoundary(d: Date = new Date()): Date {
   return next;
 }
 
-/** Validates a tracking id (admin-issued). Loose format: alnum+dash+underscore, 2-64 chars. */
+/** Validates a tracking id against the admin allow-list (case-insensitive match, stored canonical). */
 export function isValidTrackingId(id: string | undefined | null): id is string {
   if (!id) return false;
   const t = String(id).trim();
-  return /^[A-Za-z0-9_-]{2,64}$/.test(t);
+  if (!/^[A-Za-z0-9_-]{2,64}$/.test(t)) return false;
+  return (ALLOWED_TRACKING_IDS as readonly string[]).some(
+    (a) => a.toLowerCase() === t.toLowerCase(),
+  );
 }
 
 /**
