@@ -4,6 +4,48 @@ import SEO from "@/components/SEO";
 import { BLOGS } from "@/lib/blogs";
 import { useEffect, useRef } from "react";
 
+// Renders text with "Vindoy" mentions and URLs converted into anchor tags.
+function renderWithLinks(text: string) {
+  const pattern = /(https?:\/\/[^\s]+|Vindoy)/g;
+  const parts = text.split(pattern);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (part === "Vindoy") {
+      return (
+        <a
+          key={i}
+          href="https://vindoy.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          Vindoy
+        </a>
+      );
+    }
+    if (/^https?:\/\//.test(part)) {
+      // Strip trailing punctuation from URL match
+      const trailingMatch = part.match(/[.,!?;:]+$/);
+      const trailing = trailingMatch ? trailingMatch[0] : "";
+      const url = trailing ? part.slice(0, -trailing.length) : part;
+      return (
+        <span key={i}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            {url}
+          </a>
+          {trailing}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export default function BlogPost() {
   const { id = "" } = useParams();
   const post = BLOGS.find((b) => b.id === id);
@@ -111,7 +153,7 @@ export default function BlogPost() {
         >
           {post.body.split("\n\n").map((p, i) => (
             <p key={i} className="mb-5">
-              {p}
+              {renderWithLinks(p)}
             </p>
           ))}
         </div>
