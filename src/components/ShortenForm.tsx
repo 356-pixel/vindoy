@@ -23,6 +23,8 @@ export default function ShortenForm() {
   const [submitting, setSubmitting] = useState(false);
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [trackingId, setTrackingId] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -139,6 +141,36 @@ export default function ShortenForm() {
             {submitting ? "Shortening…" : "Shorten"}
           </button>
         </div>
+
+        <div className="mt-3 flex justify-start">
+          <button
+            type="button"
+            onClick={() => setShowOptions((v) => !v)}
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            {showOptions ? "Hide additional options" : "Additional options"}
+          </button>
+        </div>
+
+        {showOptions && (
+          <div className="mt-3">
+            <label htmlFor="tracking-id" className="sr-only">
+              Tracking ID
+            </label>
+            <input
+              id="tracking-id"
+              type="text"
+              autoComplete="off"
+              placeholder="Enter Tracking ID"
+              value={trackingId}
+              onChange={(e) => setTrackingId(e.target.value)}
+              className="h-10 w-full max-w-xs rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Optional. Tracking IDs are issued by the admin; unknown IDs will be treated as incorrect.
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );
