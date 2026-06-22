@@ -27,8 +27,8 @@ function redirectAnonymously(target: string) {
 
 function truncateUrl(url: string) {
   const clean = url.replace(/^https?:\/\//i, "");
-  if (clean.length <= 20) return clean;
-  return clean.slice(0, 20) + "...";
+  if (clean.length <= 30) return clean;
+  return clean.slice(0, 30) + "...";
 }
 
 const STEPS = ["Checking link", "Optimizing for FB browser", "Opening destination"];
