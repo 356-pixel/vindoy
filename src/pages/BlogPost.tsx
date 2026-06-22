@@ -111,7 +111,7 @@ export default function BlogPost() {
         >
           {post.body.split("\n\n").map((p, i) => (
             <p key={i} className="mb-5">
-              {p}
+              {renderWithLinks(p)}
             </p>
           ))}
         </div>
