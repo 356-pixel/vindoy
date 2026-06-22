@@ -1,5 +1,6 @@
 import { db } from "./firebase";
 import { doc, setDoc, serverTimestamp, increment } from "firebase/firestore";
+import { ALLOWED_TRACKING_IDS } from "./adminConfig";
 
 // Each batch is a 4-hour window. UTC-based to match Cloud Scheduler.
 export const BATCH_HOURS = 4;
