@@ -23,6 +23,8 @@ export default function ShortenForm() {
   const [submitting, setSubmitting] = useState(false);
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [trackingId, setTrackingId] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
