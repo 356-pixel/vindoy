@@ -36,7 +36,7 @@ export default function ShortenForm() {
     try {
       const slug = await generateUniqueSlug(5);
       const tid = trackingId.trim();
-      const validTid = isValidTrackingId(tid) ? tid : undefined;
+      const validTid = canonicalTrackingId(tid) ?? undefined;
       await createPreview({
         slug,
         sourceUrl: url,
