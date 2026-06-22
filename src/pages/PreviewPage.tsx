@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
-import bannerAsset from "@/assets/banner.png.asset.json";
 
 const COUNTDOWN_SECONDS = 5;
 
