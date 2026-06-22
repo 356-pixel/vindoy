@@ -15,6 +15,7 @@ export type PreviewDoc = {
   createdAt: string;
   default: Article;
   countries: Record<string, Article>; // ISO2 -> override
+  trackingId?: string;
 };
 
 export function newId(): string {
