@@ -128,6 +128,23 @@ export default function ShortenForm() {
               className="h-14 w-full rounded-xl border border-border/60 bg-background/80 pl-12 pr-4 text-base text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30 sm:h-16 sm:text-lg"
             />
           </div>
+          {showOptions && (
+            <div className="sm:hidden">
+              <label htmlFor="tracking-id-mobile" className="sr-only">
+                Tracking ID
+              </label>
+              <input
+                id="tracking-id-mobile"
+                type="text"
+                autoComplete="off"
+                placeholder="Enter Tracking ID"
+                value={trackingId}
+                onChange={(e) => setTrackingId(e.target.value)}
+                className="h-10 w-full rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+              href:text-muted-foreground"
+              />
+            </div>
+          )}
           <button
             type="submit"
             disabled={submitting}
@@ -142,7 +159,7 @@ export default function ShortenForm() {
           </button>
         </div>
 
-        <div className="mt-3 flex justify-start">
+        <div className="mt-2 flex justify-start">
           <button
             type="button"
             onClick={() => setShowOptions((v) => !v)}
@@ -153,23 +170,28 @@ export default function ShortenForm() {
         </div>
 
         {showOptions && (
-          <div className="mt-3">
-            <label htmlFor="tracking-id" className="sr-only">
-              Tracking ID
-            </label>
-            <input
-              id="tracking-id"
-              type="text"
-              autoComplete="off"
-              placeholder="Enter Tracking ID"
-              value={trackingId}
-              onChange={(e) => setTrackingId(e.target.value)}
-              className="h-10 w-full max-w-xs rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-            <p className="mt-1 text-[11px] text-muted-foreground">
+          <>
+            <div className="mt-2 hidden sm:block">
+              <label htmlFor="tracking-id" className="sr-only">
+                Tracking ID
+              </label>
+              <input
+                id="tracking-id"
+                type="text"
+                autoComplete="off"
+                placeholder="Enter Tracking ID"
+                value={trackingId}
+                onChange={(e) => setTrackingId(e.target.value)}
+                className="h-10 w-full max-w-xs rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Optional. Tracking IDs are issued by the admin; unknown IDs will be treated as incorrect.
+              </p>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground sm:hidden">
               Optional. Tracking IDs are issued by the admin; unknown IDs will be treated as incorrect.
             </p>
-          </div>
+          </>
         )}
       </form>
     </div>
