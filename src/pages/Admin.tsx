@@ -281,7 +281,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : rows.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-            No analytics yet for this range.
+            No tracking IDs with ≥ {MIN_CLICKS_DISPLAY} clicks in this range.
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -290,7 +290,9 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
               const open = openRow === key;
               const activityMs = Math.max(row.lastClickAt || 0, row.createdAt || 0);
               const date = activityMs ? new Date(activityMs).toISOString().slice(0, 10) : "—";
-              const sortedLinks = [...row.links].sort((a, b) => b.clicks - a.clicks);
+              const sortedLinks = [...row.links]
+                .filter((l) => l.clicks >= MIN_CLICKS_DISPLAY)
+                .sort((a, b) => b.clicks - a.clicks);
               return (
                 <li key={key}>
                   <button
