@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { getPreviewDoc } from "@/lib/previewsApi";
@@ -37,6 +37,7 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +84,32 @@ export default function PreviewPage() {
     return () => clearInterval(interval);
   }, [preview, navigate]);
 
+  useEffect(() => {
+    if (!adContainerRef.current) return;
+
+    const w = window as any;
+    w.atOptions = {
+      key: "f28135ccbe21f58db37d7fdecc8ddd33",
+      format: "iframe",
+      height: 50,
+      width: 320,
+      params: {},
+    };
+
+    const script = document.createElement("script");
+    script.src =
+      "https://www.highperformanceformat.com/f28135ccbe21f58db37d7fdecc8ddd33/invoke.js";
+    script.async = true;
+    adContainerRef.current.appendChild(script);
+
+    return () => {
+      if (adContainerRef.current) {
+        adContainerRef.current.innerHTML = "";
+      }
+      delete w.atOptions;
+    };
+  }, []);
+
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
 
   const elapsed = COUNTDOWN_SECONDS - secondsLeft;
@@ -112,7 +139,7 @@ export default function PreviewPage() {
         </a>
       </div>
 
-      <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-10">
+      <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
           <h1 className="text-base font-medium text-foreground text-center">
             Here's a preview of your destination
@@ -173,6 +200,12 @@ export default function PreviewPage() {
           </div>
         </div>
       </div>
+
+      {/* Sticky bottom Adsterra banner */}
+      <div
+        ref={adContainerRef}
+        className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-background/95 backdrop-blur-sm py-1"
+      />
     </main>
   );
 }
