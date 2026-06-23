@@ -198,6 +198,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <RefreshCountdown cacheTs={cacheTs} />
           <button
             onClick={() => refresh(true)}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-secondary"
@@ -219,9 +220,6 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
         <SummaryCard label="This week" links={summaries.week.links} clicks={summaries.week.clicks} accent="bg-secondary text-foreground" />
         <SummaryCard label="This month" links={summaries.month.links} clicks={summaries.month.clicks} accent="bg-secondary text-foreground" />
       </section>
-
-      {/* SECTION B: COUNTDOWN */}
-      <RefreshCountdown cacheTs={cacheTs} />
 
       {/* SECTION D: FILTERS */}
       <section className="mb-5 rounded-xl border border-border bg-card p-4">
@@ -382,14 +380,15 @@ function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
   return (
-    <section className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/60 px-4 py-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="hidden items-center gap-2 rounded-md border border-dashed border-border bg-card/60 px-3 py-2 text-sm text-muted-foreground sm:inline-flex">
+      <div className="flex items-center gap-1.5">
         <Clock className="h-4 w-4" />
-        Next analytics refresh in (cache: {REFRESH_HOURS}h)
+        <span>Refresh in</span>
       </div>
-      <div className="text-lg font-semibold tabular-nums">
+      <div className="font-semibold tabular-nums text-foreground">
         {ready ? `${pad(h)}:${pad(m)}:${pad(s)}` : "--:--:--"}
       </div>
-    </section>
+      <span className="text-xs">({REFRESH_HOURS}h cache)</span>
+    </div>
   );
 }
