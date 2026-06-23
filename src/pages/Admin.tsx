@@ -375,8 +375,8 @@ function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const target = (cacheTs || now) + REFRESH_MS;
-  const remaining = Math.max(0, target - now);
+  const ready = cacheTs > 0;
+  const remaining = ready ? Math.max(0, cacheTs + REFRESH_MS - now) : 0;
   const totalSec = Math.floor(remaining / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
@@ -388,7 +388,7 @@ function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
         Next analytics refresh in (cache: {REFRESH_HOURS}h)
       </div>
       <div className="text-lg font-semibold tabular-nums">
-        {pad(h)}:{pad(m)}:{pad(s)}
+        {ready ? `${pad(h)}:${pad(m)}:${pad(s)}` : "--:--:--"}
       </div>
     </section>
   );
