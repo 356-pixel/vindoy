@@ -13,7 +13,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ADMIN_PASSWORD, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
+import { ADMIN_PASSWORD, ALLOWED_TRACKING_IDS, MIN_CLICKS_DISPLAY, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 import {
   fetchAllTrackingAnalytics,
   filterAnalytics,
