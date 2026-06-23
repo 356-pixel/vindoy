@@ -311,7 +311,8 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
                   {open && (
                     <div className="border-t border-border bg-background/40 px-4 py-3">
                       {sortedLinks.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No per-link data yet.</p>
+                        <p className="text-xs text-muted-foreground">No links with ≥ {MIN_CLICKS_DISPLAY} clicks yet.</p>
+
                       ) : (
                         <ul className="divide-y divide-border/60">
                           {sortedLinks.map((l) => {
