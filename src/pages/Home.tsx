@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import SEO from "@/components/SEO";
 import ShortenForm from "@/components/ShortenForm";
+import FeaturedPreviews from "@/components/FeaturedPreviews";
 import { Shield, Link2, Zap } from "lucide-react";
 
 const FacebookIcon = () => (
@@ -127,6 +128,8 @@ export default function Home() {
           </div>
         </article>
       </section>
+
+      <FeaturedPreviews />
     </Layout>
   );
 }
