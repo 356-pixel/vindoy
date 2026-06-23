@@ -37,6 +37,7 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
