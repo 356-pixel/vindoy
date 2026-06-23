@@ -139,7 +139,7 @@ export default function PreviewPage() {
         </a>
       </div>
 
-      <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-10">
+      <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
           <h1 className="text-base font-medium text-foreground text-center">
             Here's a preview of your destination
