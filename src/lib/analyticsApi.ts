@@ -1,90 +1,157 @@
-import { collection, collectionGroup, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import { RETENTION_DAYS, utcDateString } from "./analytics";
 
 /**
- * Aggregated analytics doc, stored at:
- *   analytics_stats/{trackingId}/days/{YYYY-MM-DD}
+ * Read-side analytics helpers used by the admin dashboard.
  *
- * Per-link breakdown lives in `perLinkBreakdown` as a map keyed by slug.
+ * All reads obey the 60-day rule: a tracking record is included only when its
+ * createdAt OR lastClickAt is within the last 60 days. Nothing is ever deleted
+ * server-side; older docs simply drop out of the dashboard view.
  */
-export type AnalyticsStatDoc = {
-  trackingId: string;
+
+export type LinkBreakdown = {
+  slug: string;
+  shortUrl: string;
+  clicks: number;
+  lastClickAt?: number; // epoch ms
+};
+
+export type DayPoint = {
   date: string; // YYYY-MM-DD
-  totalClicks: number;
-  totalLinksGenerated: number;
-  perLinkBreakdown?: Record<string, { clicks?: number; generated?: number }>;
-  updatedAt?: unknown;
-};
-
-export type DailyTrackingRow = {
-  date: string;
-  trackingId: string;
   linksGenerated: number;
-  totalClicks: number;
-  links: { slug: string; clicks: number }[];
+  clicks: number;
 };
 
-function daysAgoDateStr(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - days);
-  return utcDateString(d);
-}
+export type TrackingAnalytics = {
+  trackingId: string;
+  totalLinksGenerated: number;
+  totalClicks: number;
+  createdAt?: number; // epoch ms
+  lastClickAt?: number; // epoch ms
+  links: LinkBreakdown[];
+  days: DayPoint[];
+};
 
-/** Reads aggregated stats. Filters out anything older than RETENTION_DAYS. */
-export async function fetchAnalytics(opts: {
-  fromDate?: string; // YYYY-MM-DD inclusive (UTC)
-  toDate?: string; // YYYY-MM-DD inclusive (UTC)
-  trackingId?: string;
-}): Promise<AnalyticsStatDoc[]> {
-  const retentionFloor = daysAgoDateStr(RETENTION_DAYS);
-  const from = opts.fromDate && opts.fromDate > retentionFloor ? opts.fromDate : retentionFloor;
-  const to = opts.toDate ?? utcDateString();
-
-  // When filtering by a single tracking id, query its `days` subcollection directly
-  // — cheaper than a collectionGroup scan.
-  const q = opts.trackingId
-    ? query(
-        collection(db, "analytics_stats", opts.trackingId, "days"),
-        where("date", ">=", from),
-        where("date", "<=", to),
-      )
-    : query(
-        collectionGroup(db, "days"),
-        where("date", ">=", from),
-        where("date", "<=", to),
-      );
-
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data() as AnalyticsStatDoc);
-}
-
-/** Shapes per-day docs into the rows the dashboard already renders. */
-export function rollupByDateTracking(docs: AnalyticsStatDoc[]): DailyTrackingRow[] {
-  const rows: DailyTrackingRow[] = docs.map((d) => {
-    const links = Object.entries(d.perLinkBreakdown || {}).map(([slug, v]) => ({
-      slug,
-      clicks: v.clicks || 0,
-    }));
-    links.sort((a, b) => b.clicks - a.clicks);
-    return {
-      date: d.date,
-      trackingId: d.trackingId,
-      linksGenerated: d.totalLinksGenerated || 0,
-      totalClicks: d.totalClicks || 0,
-      links,
-    };
-  });
-  rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  return rows;
-}
-
-export function summariseTotals(docs: AnalyticsStatDoc[]) {
-  let clicks = 0;
-  let links = 0;
-  for (const d of docs) {
-    clicks += d.totalClicks || 0;
-    links += d.totalLinksGenerated || 0;
+function tsToMs(v: unknown): number | undefined {
+  if (!v) return undefined;
+  if (v instanceof Timestamp) return v.toMillis();
+  // Firestore Web SDK sometimes returns plain { seconds, nanoseconds }
+  if (typeof v === "object" && v !== null && "seconds" in (v as Record<string, unknown>)) {
+    const s = (v as { seconds: number }).seconds;
+    return s * 1000;
   }
-  return { clicks, links };
+  return undefined;
+}
+
+function daysAgoMs(days: number): number {
+  return Date.now() - days * 24 * 60 * 60 * 1000;
+}
+
+/** Fetches every tracking_analytics doc plus its links + days subcollections (one-shot, no live listeners). */
+export async function fetchAllTrackingAnalytics(): Promise<TrackingAnalytics[]> {
+  const rootSnap = await getDocs(collection(db, "tracking_analytics"));
+  const cutoff = daysAgoMs(RETENTION_DAYS);
+
+  const out: TrackingAnalytics[] = await Promise.all(
+    rootSnap.docs.map(async (d) => {
+      const data = d.data() as Record<string, unknown>;
+      const trackingId = (data.trackingId as string) || d.id;
+      const createdAt = tsToMs(data.createdAt);
+      const lastClickAt = tsToMs(data.lastClickAt);
+
+      const [linksSnap, daysSnap] = await Promise.all([
+        getDocs(collection(db, "tracking_analytics", d.id, "links")),
+        getDocs(collection(db, "tracking_analytics", d.id, "days")),
+      ]);
+
+      const links: LinkBreakdown[] = linksSnap.docs.map((ld) => {
+        const v = ld.data() as Record<string, unknown>;
+        return {
+          slug: ld.id,
+          shortUrl: (v.shortUrl as string) || "",
+          clicks: Number(v.clicks || 0),
+          lastClickAt: tsToMs(v.lastClickAt),
+        };
+      });
+
+      const days: DayPoint[] = daysSnap.docs.map((dd) => {
+        const v = dd.data() as Record<string, unknown>;
+        return {
+          date: (v.date as string) || dd.id,
+          linksGenerated: Number(v.linksGenerated || 0),
+          clicks: Number(v.clicks || 0),
+        };
+      });
+
+      return {
+        trackingId,
+        totalLinksGenerated: Number(data.totalLinksGenerated || 0),
+        totalClicks: Number(data.totalClicks || 0),
+        createdAt,
+        lastClickAt,
+        links,
+        days,
+      };
+    }),
+  );
+
+  // 60-day rule.
+  return out.filter((t) => {
+    const newest = Math.max(t.createdAt || 0, t.lastClickAt || 0);
+    return newest >= cutoff;
+  });
+}
+
+/** Sums links/clicks across all tracking IDs for the given UTC date window (inclusive). */
+export function sumDays(
+  data: TrackingAnalytics[],
+  fromDate: string,
+  toDate: string,
+): { links: number; clicks: number } {
+  let links = 0;
+  let clicks = 0;
+  for (const t of data) {
+    for (const day of t.days) {
+      if (day.date >= fromDate && day.date <= toDate) {
+        links += day.linksGenerated;
+        clicks += day.clicks;
+      }
+    }
+  }
+  return { links, clicks };
+}
+
+export function todayRange(): { from: string; to: string } {
+  const t = utcDateString();
+  return { from: t, to: t };
+}
+
+export function weekRange(): { from: string; to: string } {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 6);
+  return { from: utcDateString(d), to: utcDateString() };
+}
+
+export function monthRange(): { from: string; to: string } {
+  const d = new Date();
+  const from = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  return { from, to: utcDateString() };
+}
+
+/** Filter list by date window + optional trackingId. Date window uses lastClickAt OR createdAt. */
+export function filterAnalytics(
+  data: TrackingAnalytics[],
+  fromDate: string,
+  toDate: string,
+  trackingId?: string,
+): TrackingAnalytics[] {
+  const fromMs = Date.parse(`${fromDate}T00:00:00Z`);
+  const toMs = Date.parse(`${toDate}T23:59:59Z`);
+  return data.filter((t) => {
+    if (trackingId && t.trackingId !== trackingId) return false;
+    const newest = Math.max(t.createdAt || 0, t.lastClickAt || 0);
+    if (!newest) return false;
+    return newest >= fromMs && newest <= toMs;
+  });
 }
