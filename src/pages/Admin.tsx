@@ -164,9 +164,13 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
     };
   }, [data]);
 
-  // Dropdown options: every tracking id still within the 60-day window.
+  // Dropdown options: every tracking id still within the 60-day window that meets the
+  // display threshold, unioned with the admin allow-list so issued IDs always appear.
   const trackingOptions = useMemo(() => {
-    return [...new Set(data.map((d) => d.trackingId))].sort();
+    const eligible = data
+      .filter((d) => d.totalClicks >= MIN_CLICKS_DISPLAY)
+      .map((d) => d.trackingId);
+    return [...new Set([...eligible, ...ALLOWED_TRACKING_IDS])].sort();
   }, [data]);
 
   const filtered = useMemo(
@@ -175,11 +179,13 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
   );
 
   const rows = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const ax = Math.max(a.lastClickAt || 0, a.createdAt || 0);
-      const bx = Math.max(b.lastClickAt || 0, b.createdAt || 0);
-      return bx - ax;
-    });
+    return [...filtered]
+      .filter((t) => t.totalClicks >= MIN_CLICKS_DISPLAY)
+      .sort((a, b) => {
+        const ax = Math.max(a.lastClickAt || 0, a.createdAt || 0);
+        const bx = Math.max(b.lastClickAt || 0, b.createdAt || 0);
+        return bx - ax;
+      });
   }, [filtered]);
 
   return (
