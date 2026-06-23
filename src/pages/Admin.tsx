@@ -13,7 +13,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ADMIN_PASSWORD, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
+import { ADMIN_PASSWORD, ALLOWED_TRACKING_IDS, MIN_CLICKS_DISPLAY, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 import {
   fetchAllTrackingAnalytics,
   filterAnalytics,
@@ -164,9 +164,13 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
     };
   }, [data]);
 
-  // Dropdown options: every tracking id still within the 60-day window.
+  // Dropdown options: every tracking id still within the 60-day window that meets the
+  // display threshold, unioned with the admin allow-list so issued IDs always appear.
   const trackingOptions = useMemo(() => {
-    return [...new Set(data.map((d) => d.trackingId))].sort();
+    const eligible = data
+      .filter((d) => d.totalClicks >= MIN_CLICKS_DISPLAY)
+      .map((d) => d.trackingId);
+    return [...new Set([...eligible, ...ALLOWED_TRACKING_IDS])].sort();
   }, [data]);
 
   const filtered = useMemo(
@@ -175,11 +179,13 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
   );
 
   const rows = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const ax = Math.max(a.lastClickAt || 0, a.createdAt || 0);
-      const bx = Math.max(b.lastClickAt || 0, b.createdAt || 0);
-      return bx - ax;
-    });
+    return [...filtered]
+      .filter((t) => t.totalClicks >= MIN_CLICKS_DISPLAY)
+      .sort((a, b) => {
+        const ax = Math.max(a.lastClickAt || 0, a.createdAt || 0);
+        const bx = Math.max(b.lastClickAt || 0, b.createdAt || 0);
+        return bx - ax;
+      });
   }, [filtered]);
 
   return (
@@ -275,7 +281,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : rows.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-            No analytics yet for this range.
+            No tracking IDs with ≥ {MIN_CLICKS_DISPLAY} clicks in this range.
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -284,7 +290,9 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
               const open = openRow === key;
               const activityMs = Math.max(row.lastClickAt || 0, row.createdAt || 0);
               const date = activityMs ? new Date(activityMs).toISOString().slice(0, 10) : "—";
-              const sortedLinks = [...row.links].sort((a, b) => b.clicks - a.clicks);
+              const sortedLinks = [...row.links]
+                .filter((l) => l.clicks >= MIN_CLICKS_DISPLAY)
+                .sort((a, b) => b.clicks - a.clicks);
               return (
                 <li key={key}>
                   <button
@@ -303,7 +311,8 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
                   {open && (
                     <div className="border-t border-border bg-background/40 px-4 py-3">
                       {sortedLinks.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No per-link data yet.</p>
+                        <p className="text-xs text-muted-foreground">No links with ≥ {MIN_CLICKS_DISPLAY} clicks yet.</p>
+
                       ) : (
                         <ul className="divide-y divide-border/60">
                           {sortedLinks.map((l) => {
@@ -366,8 +375,8 @@ function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const target = (cacheTs || now) + REFRESH_MS;
-  const remaining = Math.max(0, target - now);
+  const ready = cacheTs > 0;
+  const remaining = ready ? Math.max(0, cacheTs + REFRESH_MS - now) : 0;
   const totalSec = Math.floor(remaining / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
@@ -379,7 +388,7 @@ function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
         Next analytics refresh in (cache: {REFRESH_HOURS}h)
       </div>
       <div className="text-lg font-semibold tabular-nums">
-        {pad(h)}:{pad(m)}:{pad(s)}
+        {ready ? `${pad(h)}:${pad(m)}:${pad(s)}` : "--:--:--"}
       </div>
     </section>
   );

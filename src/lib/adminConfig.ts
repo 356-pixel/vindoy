@@ -10,6 +10,10 @@ export const ADMIN_PASSWORD = "vindoy2026"; // <- change me
 // Add new IDs here as you issue them.
 export const ALLOWED_TRACKING_IDS = ["PML"] as const;
 
+// Admin dashboard: hide tracking IDs / links with fewer than this many clicks.
+// Does NOT affect Today/Week/Month summary totals.
+export const MIN_CLICKS_DISPLAY = 25;
+
 // Curated list of supported countries for per-country article overrides.
 // "ALL" is the implicit default and is not in this list.
 // Priority countries shown first in the admin (in this exact order).
