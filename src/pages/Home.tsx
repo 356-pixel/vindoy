@@ -128,6 +128,8 @@ export default function Home() {
           </div>
         </article>
       </section>
+
+      <FeaturedPreviews />
     </Layout>
   );
 }
