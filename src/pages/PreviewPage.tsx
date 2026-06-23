@@ -84,6 +84,32 @@ export default function PreviewPage() {
     return () => clearInterval(interval);
   }, [preview, navigate]);
 
+  useEffect(() => {
+    if (!adContainerRef.current) return;
+
+    const w = window as any;
+    w.atOptions = {
+      key: "f28135ccbe21f58db37d7fdecc8ddd33",
+      format: "iframe",
+      height: 50,
+      width: 320,
+      params: {},
+    };
+
+    const script = document.createElement("script");
+    script.src =
+      "https://www.highperformanceformat.com/f28135ccbe21f58db37d7fdecc8ddd33/invoke.js";
+    script.async = true;
+    adContainerRef.current.appendChild(script);
+
+    return () => {
+      if (adContainerRef.current) {
+        adContainerRef.current.innerHTML = "";
+      }
+      delete w.atOptions;
+    };
+  }, []);
+
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
 
   const elapsed = COUNTDOWN_SECONDS - secondsLeft;
