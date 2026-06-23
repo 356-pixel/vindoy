@@ -74,9 +74,6 @@ export default function BlogPost() {
 
   const wordCount = post.body.split(/\s+/).filter(Boolean).length;
 
-  const scrollToBody = () => {
-    bodyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   return (
     <Layout>
