@@ -10,29 +10,28 @@ import {
   LogOut,
   MousePointerClick,
   RefreshCw,
-  Search,
   Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ADMIN_PASSWORD, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 import {
-  fetchAnalytics,
-  rollupByDateTracking,
-  summariseTotals,
-  type AnalyticsStatDoc,
-  type DailyTrackingRow,
+  fetchAllTrackingAnalytics,
+  filterAnalytics,
+  monthRange,
+  sumDays,
+  todayRange,
+  weekRange,
+  type TrackingAnalytics,
 } from "@/lib/analyticsApi";
-import { nextBatchBoundary, RETENTION_DAYS, utcDateString } from "@/lib/analytics";
+import { REFRESH_HOURS, REFRESH_MS, RETENTION_DAYS, utcDateString } from "@/lib/analytics";
 
 const SESSION_KEY = "vindoy_admin_auth";
+const CACHE_KEY = "analyticsCache";
+const CACHE_TS_KEY = "analyticsCacheTimestamp";
 
 export default function Admin() {
   const [authed, setAuthed] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(SESSION_KEY) === "1";
-    } catch {
-      return false;
-    }
+    try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch { return false; }
   });
 
   return (
@@ -42,11 +41,7 @@ export default function Admin() {
         {authed ? (
           <AnalyticsDashboard
             onLogout={() => {
-              try {
-                sessionStorage.removeItem(SESSION_KEY);
-              } catch {
-                // ignore
-              }
+              try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
               setAuthed(false);
             }}
           />
@@ -77,12 +72,8 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (pw === ADMIN_PASSWORD) {
-            onSuccess();
-            toast.success("Welcome back");
-          } else {
-            toast.error("Wrong password");
-          }
+          if (pw === ADMIN_PASSWORD) { onSuccess(); toast.success("Welcome back"); }
+          else toast.error("Wrong password");
         }}
         className="space-y-3"
       >
@@ -111,61 +102,46 @@ function defaultFromDate(): string {
   return utcDateString(d);
 }
 
-const CACHE_KEY = "vindoy_admin_analytics_cache_v1";
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min — well under the 4h batch cycle.
+type CacheBlob = { ts: number; data: TrackingAnalytics[] };
 
-type CacheBlob = { ts: number; key: string; data: AnalyticsStatDoc[] };
-
-function loadCache(key: string): AnalyticsStatDoc[] | null {
+function loadCache(): CacheBlob | null {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CacheBlob;
-    if (parsed.key !== key) return null;
-    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
-    return parsed.data;
-  } catch {
-    return null;
-  }
+    const raw = localStorage.getItem(CACHE_KEY);
+    const ts = Number(localStorage.getItem(CACHE_TS_KEY) || 0);
+    if (!raw || !ts) return null;
+    return { ts, data: JSON.parse(raw) as TrackingAnalytics[] };
+  } catch { return null; }
 }
 
-function saveCache(key: string, data: AnalyticsStatDoc[]) {
+function saveCache(data: TrackingAnalytics[]) {
   try {
-    const blob: CacheBlob = { ts: Date.now(), key, data };
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(blob));
-  } catch {
-    // ignore
-  }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+  } catch { /* ignore */ }
 }
 
 function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
   const [fromDate, setFromDate] = useState<string>(defaultFromDate());
   const [toDate, setToDate] = useState<string>(utcDateString());
   const [trackingFilter, setTrackingFilter] = useState<string>("");
-  const [docs, setDocs] = useState<AnalyticsStatDoc[]>([]);
+  const [data, setData] = useState<TrackingAnalytics[]>([]);
+  const [cacheTs, setCacheTs] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [openRow, setOpenRow] = useState<string | null>(null);
 
-  const cacheKey = `${fromDate}|${toDate}|${trackingFilter.trim().toLowerCase()}`;
-
-  async function load(forceFresh = false) {
+  async function refresh(force = false) {
     setLoading(true);
     try {
-      if (!forceFresh) {
-        const cached = loadCache(cacheKey);
-        if (cached) {
-          setDocs(cached);
-          setLoading(false);
-          return;
-        }
+      const cache = loadCache();
+      if (!force && cache && Date.now() - cache.ts < REFRESH_MS) {
+        setData(cache.data);
+        setCacheTs(cache.ts);
+      } else {
+        const fresh = await fetchAllTrackingAnalytics();
+        saveCache(fresh);
+        setData(fresh);
+        setCacheTs(Date.now());
       }
-      const data = await fetchAnalytics({
-        fromDate,
-        toDate,
-        trackingId: trackingFilter.trim() || undefined,
-      });
-      setDocs(data);
-      saveCache(cacheKey, data);
     } catch (e) {
       console.error(e);
       toast.error("Could not load analytics");
@@ -174,24 +150,37 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  // Reload on filter change.
-  useEffect(() => {
-    load(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromDate, toDate, trackingFilter]);
+  useEffect(() => { refresh(false); /* eslint-disable-next-line */ }, []);
 
-  const todaySummary = useMemo(() => {
-    const today = utcDateString();
-    return summariseTotals(docs.filter((d) => d.date === today));
-  }, [docs]);
+  // Summary cards always use full dataset (not affected by filters).
+  const summaries = useMemo(() => {
+    const t = todayRange();
+    const w = weekRange();
+    const m = monthRange();
+    return {
+      today: sumDays(data, t.from, t.to),
+      week: sumDays(data, w.from, w.to),
+      month: sumDays(data, m.from, m.to),
+    };
+  }, [data]);
 
-  const monthSummary = useMemo(() => {
-    const now = new Date();
-    const prefix = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    return summariseTotals(docs.filter((d) => d.date.startsWith(prefix)));
-  }, [docs]);
+  // Dropdown options: every tracking id still within the 60-day window.
+  const trackingOptions = useMemo(() => {
+    return [...new Set(data.map((d) => d.trackingId))].sort();
+  }, [data]);
 
-  const rows = useMemo<DailyTrackingRow[]>(() => rollupByDateTracking(docs), [docs]);
+  const filtered = useMemo(
+    () => filterAnalytics(data, fromDate, toDate, trackingFilter || undefined),
+    [data, fromDate, toDate, trackingFilter],
+  );
+
+  const rows = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const ax = Math.max(a.lastClickAt || 0, a.createdAt || 0);
+      const bx = Math.max(b.lastClickAt || 0, b.createdAt || 0);
+      return bx - ax;
+    });
+  }, [filtered]);
 
   return (
     <>
@@ -199,12 +188,12 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
         <div>
           <h1 className="text-xl font-semibold">Analytics</h1>
           <p className="text-xs text-muted-foreground">
-            Tracking-ID links only · data older than {RETENTION_DAYS} days is excluded
+            Tracking-ID links only · entries older than {RETENTION_DAYS} days are hidden
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => load(true)}
+            onClick={() => refresh(true)}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-secondary"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -219,25 +208,16 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
       </header>
 
       {/* SECTION A: SUMMARY CARDS */}
-      <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SummaryCard
-          label="Today"
-          links={todaySummary.links}
-          clicks={todaySummary.clicks}
-          accent="bg-primary/10 text-primary"
-        />
-        <SummaryCard
-          label="This month"
-          links={monthSummary.links}
-          clicks={monthSummary.clicks}
-          accent="bg-secondary text-foreground"
-        />
+      <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SummaryCard label="Today" links={summaries.today.links} clicks={summaries.today.clicks} accent="bg-primary/10 text-primary" />
+        <SummaryCard label="This week" links={summaries.week.links} clicks={summaries.week.clicks} accent="bg-secondary text-foreground" />
+        <SummaryCard label="This month" links={summaries.month.links} clicks={summaries.month.clicks} accent="bg-secondary text-foreground" />
       </section>
 
       {/* SECTION B: COUNTDOWN */}
-      <BatchCountdown />
+      <RefreshCountdown cacheTs={cacheTs} />
 
-      {/* SECTION C: FILTERS */}
+      {/* SECTION D: FILTERS */}
       <section className="mb-5 rounded-xl border border-border bg-card p-4">
         <div className="mb-3 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
           <Filter className="h-3.5 w-3.5" /> Filters
@@ -266,21 +246,21 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           </label>
           <label className="text-xs font-medium text-muted-foreground">
             Tracking ID
-            <div className="relative mt-1">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={trackingFilter}
-                placeholder="exact match"
-                onChange={(e) => setTrackingFilter(e.target.value)}
-                className="w-full rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+            <select
+              value={trackingFilter}
+              onChange={(e) => setTrackingFilter(e.target.value)}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All Tracking IDs</option>
+              {trackingOptions.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
           </label>
         </div>
       </section>
 
-      {/* SECTION D + E: TABLE WITH EXPANDABLE ROWS */}
+      {/* SECTION E + F: TABLE WITH EXPANDABLE ROWS */}
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1fr] gap-2 border-b border-border bg-secondary/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <span />
@@ -295,13 +275,16 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : rows.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-            No analytics yet for this range. New tracked links will appear here after the next batch.
+            No analytics yet for this range.
           </div>
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((row) => {
-              const key = `${row.date}__${row.trackingId}`;
+              const key = row.trackingId;
               const open = openRow === key;
+              const activityMs = Math.max(row.lastClickAt || 0, row.createdAt || 0);
+              const date = activityMs ? new Date(activityMs).toISOString().slice(0, 10) : "—";
+              const sortedLinks = [...row.links].sort((a, b) => b.clicks - a.clicks);
               return (
                 <li key={key}>
                   <button
@@ -312,34 +295,37 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
                     <ChevronDown
                       className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
                     />
-                    <span className="font-medium">{row.date}</span>
+                    <span className="font-medium">{date}</span>
                     <span className="truncate font-mono text-xs">{row.trackingId}</span>
-                    <span className="text-right tabular-nums">{row.linksGenerated.toLocaleString()}</span>
+                    <span className="text-right tabular-nums">{row.totalLinksGenerated.toLocaleString()}</span>
                     <span className="text-right tabular-nums font-semibold">{row.totalClicks.toLocaleString()}</span>
                   </button>
                   {open && (
                     <div className="border-t border-border bg-background/40 px-4 py-3">
-                      {row.links.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No per-link breakdown for this batch yet.</p>
+                      {sortedLinks.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No per-link data yet.</p>
                       ) : (
                         <ul className="divide-y divide-border/60">
-                          {row.links.map((l) => (
-                            <li key={l.slug} className="flex items-center justify-between gap-3 py-2 text-sm">
-                              <a
-                                href={`${SHAREABLE_DOMAIN}/${l.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex min-w-0 items-center gap-1.5 truncate text-primary hover:underline"
-                              >
-                                <LinkIcon className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{SHAREABLE_DOMAIN.replace(/^https?:\/\//, "")}/{l.slug}</span>
-                              </a>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                                <MousePointerClick className="h-3 w-3" />
-                                {l.clicks.toLocaleString()}
-                              </span>
-                            </li>
-                          ))}
+                          {sortedLinks.map((l) => {
+                            const url = l.shortUrl || `${SHAREABLE_DOMAIN}/${l.slug}`;
+                            return (
+                              <li key={l.slug} className="flex items-center justify-between gap-3 py-2 text-sm">
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex min-w-0 items-center gap-1.5 truncate text-primary hover:underline"
+                                >
+                                  <LinkIcon className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{url.replace(/^https?:\/\//, "")}</span>
+                                </a>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                  <MousePointerClick className="h-3 w-3" />
+                                  {l.clicks.toLocaleString()}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                     </div>
@@ -354,17 +340,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-function SummaryCard({
-  label,
-  links,
-  clicks,
-  accent,
-}: {
-  label: string;
-  links: number;
-  clicks: number;
-  accent: string;
-}) {
+function SummaryCard({ label, links, clicks, accent }: { label: string; links: number; clicks: number; accent: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className={`mb-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent}`}>{label}</div>
@@ -382,17 +358,15 @@ function SummaryCard({
   );
 }
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
+function pad(n: number) { return String(n).padStart(2, "0"); }
 
-function BatchCountdown() {
+function RefreshCountdown({ cacheTs }: { cacheTs: number }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const target = useMemo(() => nextBatchBoundary(new Date(now)).getTime(), [now]);
+  const target = (cacheTs || now) + REFRESH_MS;
   const remaining = Math.max(0, target - now);
   const totalSec = Math.floor(remaining / 1000);
   const h = Math.floor(totalSec / 3600);
@@ -402,7 +376,7 @@ function BatchCountdown() {
     <section className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/60 px-4 py-3">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Clock className="h-4 w-4" />
-        Next analytics update in
+        Next analytics refresh in (cache: {REFRESH_HOURS}h)
       </div>
       <div className="text-lg font-semibold tabular-nums">
         {pad(h)}:{pad(m)}:{pad(s)}

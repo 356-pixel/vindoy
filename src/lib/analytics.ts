@@ -1,11 +1,37 @@
 import { db } from "./firebase";
-import { doc, setDoc, serverTimestamp, increment } from "firebase/firestore";
-import { ALLOWED_TRACKING_IDS } from "./adminConfig";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  increment,
+  Timestamp,
+} from "firebase/firestore";
+import { ALLOWED_TRACKING_IDS, SHAREABLE_DOMAIN } from "./adminConfig";
 
-// Each batch is a 4-hour window. UTC-based to match Cloud Scheduler.
-export const BATCH_HOURS = 4;
-export const BATCHES_PER_DAY = 24 / BATCH_HOURS; // 6
+/**
+ * Direct-to-Firestore analytics (no Cloud Functions, no batching, no aggregation jobs).
+ *
+ * Schema:
+ *   tracking_analytics/{trackingId}
+ *     { trackingId, totalLinksGenerated, totalClicks, createdAt, lastClickAt }
+ *
+ *   tracking_analytics/{trackingId}/links/{slug}
+ *     { shortUrl, clicks, createdAt, lastClickAt }
+ *
+ *   tracking_analytics/{trackingId}/days/{YYYY-MM-DD}
+ *     { date, linksGenerated, clicks }
+ *     (powers the Today / This week / This month summary cards)
+ *
+ * Only writes for links that carry a valid (admin-issued) trackingId. Untracked
+ * links are completely ignored.
+ *
+ * 60-day rule: nothing is deleted. The admin dashboard filters records whose
+ * createdAt and lastClickAt are both older than 60 days.
+ */
+
 export const RETENTION_DAYS = 60;
+export const REFRESH_HOURS = 3;
+export const REFRESH_MS = REFRESH_HOURS * 60 * 60 * 1000;
 
 export function utcDateString(d: Date = new Date()): string {
   const y = d.getUTCFullYear();
@@ -14,95 +40,102 @@ export function utcDateString(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-export function currentHourBatch(d: Date = new Date()): number {
-  return Math.floor(d.getUTCHours() / BATCH_HOURS);
-}
-
-/** Bucket id used inside the per-tracking-id click_buffer subcollection: YYYY-MM-DD-HH (UTC hour). */
-export function currentDateHour(d: Date = new Date()): string {
-  return `${utcDateString(d)}-${String(d.getUTCHours()).padStart(2, "0")}`;
-}
-
-export function nextBatchBoundary(d: Date = new Date()): Date {
-  const next = new Date(d);
-  next.setUTCMinutes(0, 0, 0);
-  const nextBatch = (currentHourBatch(d) + 1) * BATCH_HOURS;
-  if (nextBatch >= 24) {
-    next.setUTCDate(next.getUTCDate() + 1);
-    next.setUTCHours(0);
-  } else {
-    next.setUTCHours(nextBatch);
-  }
-  return next;
-}
-
-/** Returns canonical (admin-issued) tracking id if input matches the allow-list, else null. */
+/** Normalise inputs (always uppercase). Returns canonical id from the allow-list, or null. */
 export function canonicalTrackingId(id: string | undefined | null): string | null {
   if (!id) return null;
-  const t = String(id).trim();
-  if (!/^[A-Za-z0-9_-]{2,64}$/.test(t)) return null;
+  const t = String(id).trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{2,64}$/.test(t)) return null;
   const hit = (ALLOWED_TRACKING_IDS as readonly string[]).find(
-    (a) => a.toLowerCase() === t.toLowerCase(),
+    (a) => a.toUpperCase() === t,
   );
-  return hit ?? null;
+  return hit ? hit.toUpperCase() : null;
 }
 
-/** Validates a tracking id against the admin allow-list. */
 export function isValidTrackingId(id: string | undefined | null): id is string {
   return canonicalTrackingId(id) !== null;
 }
 
-/**
- * Raw click buffer path:
- *   click_buffer/{trackingId}/hours/{YYYY-MM-DD-HH}
- *
- * Fields:
- *   clickCount        — incremented per click
- *   linksGenerated    — incremented per generated link
- *   slugs.<slug>.clicks    — per-link click counter
- *   slugs.<slug>.generated — per-link generation counter
- *   processed         — set to true by the 4-hour aggregator (never deleted here)
- *   updatedAt         — serverTimestamp
- *
- * Only docs for valid trackingIds are ever written. This collapses what used to be
- * one-doc-per-slug-per-batch into a single bucket per tracking-id per UTC hour.
- */
-function bufferRef(trackingId: string, dateHour: string) {
-  return doc(db, "click_buffer", trackingId, "hours", dateHour);
+function rootRef(trackingId: string) {
+  return doc(db, "tracking_analytics", trackingId);
+}
+function linkRef(trackingId: string, slug: string) {
+  return doc(db, "tracking_analytics", trackingId, "links", slug);
+}
+function dayRef(trackingId: string, date: string) {
+  return doc(db, "tracking_analytics", trackingId, "days", date);
 }
 
 export async function recordLinkGenerated(trackingId: string, slug: string): Promise<void> {
-  if (!isValidTrackingId(trackingId)) return;
-  const now = new Date();
-  await setDoc(
-    bufferRef(trackingId, currentDateHour(now)),
-    {
-      trackingId,
-      date: utcDateString(now),
-      hour: now.getUTCHours(),
-      linksGenerated: increment(1),
-      [`slugs.${slug}.generated`]: increment(1),
-      processed: false,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const tid = canonicalTrackingId(trackingId);
+  if (!tid) return;
+  const now = Timestamp.now();
+  const today = utcDateString();
+  const shortUrl = `${SHAREABLE_DOMAIN}/${slug}`;
+
+  await Promise.all([
+    setDoc(
+      rootRef(tid),
+      {
+        trackingId: tid,
+        totalLinksGenerated: increment(1),
+        createdAt: now, // overwritten on first write only via merge — keep most recent activity instead
+        lastClickAt: null,
+      },
+      { merge: true },
+    ),
+    setDoc(
+      linkRef(tid, slug),
+      {
+        shortUrl,
+        clicks: increment(0),
+        createdAt: now,
+      },
+      { merge: true },
+    ),
+    setDoc(
+      dayRef(tid, today),
+      {
+        date: today,
+        linksGenerated: increment(1),
+      },
+      { merge: true },
+    ),
+  ]);
 }
 
 export async function recordClick(trackingId: string, slug: string): Promise<void> {
-  if (!isValidTrackingId(trackingId)) return;
-  const now = new Date();
-  await setDoc(
-    bufferRef(trackingId, currentDateHour(now)),
-    {
-      trackingId,
-      date: utcDateString(now),
-      hour: now.getUTCHours(),
-      clickCount: increment(1),
-      [`slugs.${slug}.clicks`]: increment(1),
-      processed: false,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const tid = canonicalTrackingId(trackingId);
+  if (!tid) return;
+  const now = serverTimestamp();
+  const today = utcDateString();
+  const shortUrl = `${SHAREABLE_DOMAIN}/${slug}`;
+
+  await Promise.all([
+    setDoc(
+      rootRef(tid),
+      {
+        trackingId: tid,
+        totalClicks: increment(1),
+        lastClickAt: now,
+      },
+      { merge: true },
+    ),
+    setDoc(
+      linkRef(tid, slug),
+      {
+        shortUrl,
+        clicks: increment(1),
+        lastClickAt: now,
+      },
+      { merge: true },
+    ),
+    setDoc(
+      dayRef(tid, today),
+      {
+        date: today,
+        clicks: increment(1),
+      },
+      { merge: true },
+    ),
+  ]);
 }

@@ -145,10 +145,10 @@ export default function ShortenForm() {
                 id="tracking-id-mobile"
                 type="text"
                 autoComplete="off"
-                placeholder="Enter Tracking ID"
+                placeholder="ENTER TRACKING ID"
                 value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+                onChange={(e) => setTrackingId(e.target.value.toUpperCase())}
+                className="h-10 w-full rounded-lg border border-border/60 bg-background/80 px-3 text-sm uppercase tracking-wider text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
             </div>
           )}
@@ -186,10 +186,10 @@ export default function ShortenForm() {
                 id="tracking-id"
                 type="text"
                 autoComplete="off"
-                placeholder="Enter Tracking ID"
+                placeholder="ENTER TRACKING ID"
                 value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-                className="h-10 w-full max-w-xs rounded-lg border border-border/60 bg-background/80 px-3 text-sm text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+                onChange={(e) => setTrackingId(e.target.value.toUpperCase())}
+                className="h-10 w-full max-w-xs rounded-lg border border-border/60 bg-background/80 px-3 text-sm uppercase tracking-wider text-foreground shadow-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Optional. Tracking IDs are issued by the admin; unknown IDs will be treated as incorrect.
