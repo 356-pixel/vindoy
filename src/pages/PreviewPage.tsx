@@ -155,9 +155,6 @@ export default function PreviewPage() {
 
       <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
-          <h1 className="text-base font-medium text-foreground text-center">
-            Here's a preview of your destination
-          </h1>
 
           <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center gap-5">
