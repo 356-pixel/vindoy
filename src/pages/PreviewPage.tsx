@@ -177,7 +177,10 @@ export default function PreviewPage() {
               )}
               {secondsLeft <= 0 && fullUrl && (
                 <button
-                  onClick={() => redirectAnonymously(fullUrl)}
+                  onClick={() => {
+                    if (analytics) logEvent(analytics, "click_here", { slug });
+                    redirectAnonymously(fullUrl);
+                  }}
                   className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   CLICK HERE
