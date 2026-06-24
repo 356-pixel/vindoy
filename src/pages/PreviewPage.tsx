@@ -77,6 +77,9 @@ export default function PreviewPage() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           clearInterval(interval);
+          if (analytics) {
+            logEvent(analytics, "countdown_complete", { slug });
+          }
           return 0;
         }
         return s - 1;
