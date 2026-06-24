@@ -12,6 +12,7 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import PreviewPage from "./pages/PreviewPage";
 import NotFound from "./pages/NotFound";
+import PageTracker from "./components/PageTracker";
 
 const Admin = lazy(() => import("./pages/Admin"));
 
