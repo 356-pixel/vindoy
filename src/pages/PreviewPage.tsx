@@ -41,6 +41,7 @@ export default function PreviewPage() {
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   const [bannerOpen, setBannerOpen] = useState(true);
   const adContainerRef = useRef<HTMLDivElement>(null);
+  const topAdContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +91,23 @@ export default function PreviewPage() {
   }, [preview, navigate]);
 
   useEffect(() => {
+    if (!topAdContainerRef.current) return;
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.setAttribute("data-cfasync", "false");
+    script.src =
+      "https://pl29878528.effectivecpmnetwork.com/0404c82c745238b0f65a13a106675274/invoke.js";
+    topAdContainerRef.current.appendChild(script);
+
+    return () => {
+      if (topAdContainerRef.current) {
+        topAdContainerRef.current.innerHTML = "";
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!adContainerRef.current) return;
 
     const w = window as any;
@@ -128,21 +146,11 @@ export default function PreviewPage() {
         <span className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
           ADVERTISEMENT
         </span>
-          <a
-            href="https://vindoy.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Advertisement"
-            onClick={() => {
-              if (analytics) logEvent(analytics, "banner_ad_click", { slug });
-            }}
-          >
-          <img
-            src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
-            alt="Advertisement"
-            className="h-[250px] w-[300px] object-contain"
-          />
-        </a>
+        <div
+          ref={topAdContainerRef}
+          id="container-0404c82c745238b0f65a13a106675274"
+          className="w-full"
+        />
       </div>
 
       <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-20">
