@@ -53,6 +53,7 @@ export default function ShortenForm() {
       }
       setGenerated(`${SHAREABLE_DOMAIN}/${slug}`);
       setCopied(false);
+      if (analytics) logEvent(analytics, "generate_link", { slug });
     } catch (err) {
       console.error(err);
       toast.error("Could not shorten that URL. Try again.");
