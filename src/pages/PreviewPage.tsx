@@ -217,7 +217,7 @@ export default function PreviewPage() {
             {/* Ad container with curved top-left */}
             <div
               ref={adContainerRef}
-              className="rounded-tl-2xl border border-border border-b-0 bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
+              className="border-y border-border bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
             />
           </div>
         </div>
