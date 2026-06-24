@@ -128,7 +128,15 @@ export default function PreviewPage() {
         <span className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
           ADVERTISEMENT
         </span>
-        <a href="https://vindoy.com" target="_blank" rel="noopener noreferrer" aria-label="Advertisement">
+          <a
+            href="https://vindoy.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Advertisement"
+            onClick={() => {
+              if (analytics) logEvent(analytics, "banner_ad_click", { slug });
+            }}
+          >
           <img
             src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
             alt="Advertisement"
