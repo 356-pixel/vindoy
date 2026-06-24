@@ -6,7 +6,7 @@ import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
 
-const COUNTDOWN_SECONDS = 6;
+const COUNTDOWN_SECONDS = 4;
 
 function normalizeUrl(url: string) {
   if (!url) return url;
@@ -30,7 +30,7 @@ function truncateUrl(url: string) {
   return clean.slice(0, 30) + "...";
 }
 
-const STEPS = ["Checking link", "Optimizing for FB browser", "Opening destination"];
+
 
 export default function PreviewPage() {
   const { slug = "" } = useParams();
@@ -75,7 +75,6 @@ export default function PreviewPage() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           clearInterval(interval);
-          redirectAnonymously(target);
           return 0;
         }
         return s - 1;
@@ -113,24 +112,18 @@ export default function PreviewPage() {
 
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
 
-  const elapsed = COUNTDOWN_SECONDS - secondsLeft;
-  const activeStep = Math.min(STEPS.length - 1, Math.floor((elapsed / COUNTDOWN_SECONDS) * STEPS.length));
-
   const fullUrl = preview?.sourceUrl ? normalizeUrl(preview.sourceUrl) : "";
   const displayUrl = preview?.sourceUrl ? truncateUrl(normalizeUrl(preview.sourceUrl)) : "";
-
-  const ringSize = 32;
-  const stroke = 5;
-  const radius = (ringSize - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (progress / 100) * circumference;
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
       <Progress value={progress} className="h-1 w-full rounded-none" />
 
       {/* Banner ad */}
-      <div className="flex w-full justify-center pt-8">
+      <div className="flex w-full flex-col items-center pt-8">
+        <span className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+          ADVERTISEMENT
+        </span>
         <a href="https://vindoy.com" target="_blank" rel="noopener noreferrer" aria-label="Advertisement">
           <img
             src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
@@ -162,36 +155,21 @@ export default function PreviewPage() {
                 </span>
               </div>
 
-              {/* Loading row: small continuous ring + active step text */}
-              <div className="flex w-full items-center gap-4">
-                <div className="relative flex shrink-0 items-center justify-center" style={{ width: ringSize, height: ringSize }}>
-                  <svg width={ringSize} height={ringSize} className="animate-spin" style={{ animationDuration: "2s" }}>
-                    <circle
-                      cx={ringSize / 2}
-                      cy={ringSize / 2}
-                      r={radius}
-                      stroke="hsl(var(--muted))"
-                      strokeWidth={stroke}
-                      fill="none"
-                    />
-                    <circle
-                      cx={ringSize / 2}
-                      cy={ringSize / 2}
-                      r={radius}
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={stroke}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={dashOffset}
-                      style={{ transition: "stroke-dashoffset 1s linear" }}
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  {STEPS[activeStep]}
+              {/* Progress bar */}
+              <div className="flex w-full flex-col gap-2">
+                <Progress value={progress} className="h-3 w-full" />
+                <span className="text-center text-sm text-foreground">
+                  {secondsLeft > 0 ? "Optimizing link for Facebook browser" : ""}
                 </span>
               </div>
+              {secondsLeft <= 0 && fullUrl && (
+                <button
+                  onClick={() => redirectAnonymously(fullUrl)}
+                  className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  CLICK HERE
+                </button>
+              )}
             </div>
           </div>
 
