@@ -203,10 +203,25 @@ export default function PreviewPage() {
       </div>
 
       {/* Sticky bottom Adsterra banner */}
-      <div
-        ref={adContainerRef}
-        className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-background/95 backdrop-blur-sm py-1"
-      />
+      {bannerOpen && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
+          <div className="relative flex items-end">
+            {/* Close button */}
+            <button
+              onClick={() => setBannerOpen(false)}
+              className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center rounded-tl-lg bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close advertisement"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {/* Ad container with curved top-left */}
+            <div
+              ref={adContainerRef}
+              className="rounded-tl-2xl border border-border border-b-0 bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
