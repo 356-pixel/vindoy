@@ -66,6 +66,7 @@ export default function ShortenForm() {
     await navigator.clipboard.writeText(generated);
     setCopied(true);
     toast.success("Copied to clipboard");
+    if (analytics) logEvent(analytics, "copy_link", { url: generated });
     setTimeout(() => setCopied(false), 2000);
   }
 
