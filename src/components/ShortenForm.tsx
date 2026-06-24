@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Loader2, Link2, Copy, Check, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { logEvent } from "firebase/analytics";
+import { analytics } from "@/lib/firebase";
 import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
