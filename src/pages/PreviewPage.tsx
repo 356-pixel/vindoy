@@ -202,7 +202,10 @@ export default function PreviewPage() {
           <div className="relative flex justify-center border-y border-border bg-background/95 backdrop-blur-sm pt-1 pb-0">
             {/* Close button */}
             <button
-              onClick={() => setBannerOpen(false)}
+              onClick={() => {
+                if (analytics) logEvent(analytics, "close_banner", { slug });
+                setBannerOpen(false);
+              }}
               className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center rounded-tl-lg bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close advertisement"
             >
