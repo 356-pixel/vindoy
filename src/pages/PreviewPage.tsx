@@ -209,7 +209,7 @@ export default function PreviewPage() {
             {/* Close button */}
             <button
               onClick={() => setBannerOpen(false)}
-              className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center rounded-tl-lg bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close advertisement"
             >
               <X className="h-4 w-4" />
