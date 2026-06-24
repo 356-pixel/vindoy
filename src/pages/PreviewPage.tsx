@@ -30,7 +30,7 @@ function truncateUrl(url: string) {
   return clean.slice(0, 30) + "...";
 }
 
-const STEPS = ["Checking link", "Optimizing for FB browser", "Opening destination"];
+
 
 export default function PreviewPage() {
   const { slug = "" } = useParams();
