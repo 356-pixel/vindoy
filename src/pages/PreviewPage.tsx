@@ -204,8 +204,8 @@ export default function PreviewPage() {
 
       {/* Sticky bottom Adsterra banner */}
       {bannerOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
-          <div className="relative flex items-end">
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div className="relative flex justify-center border-y border-border bg-background/95 backdrop-blur-sm pt-1 pb-0">
             {/* Close button */}
             <button
               onClick={() => setBannerOpen(false)}
@@ -214,11 +214,8 @@ export default function PreviewPage() {
             >
               <X className="h-4 w-4" />
             </button>
-            {/* Ad container with curved top-left */}
-            <div
-              ref={adContainerRef}
-              className="border-y border-border bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
-            />
+            {/* Ad container */}
+            <div ref={adContainerRef} className="px-1" />
           </div>
         </div>
       )}
