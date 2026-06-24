@@ -112,17 +112,8 @@ export default function PreviewPage() {
 
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
 
-  const elapsed = COUNTDOWN_SECONDS - secondsLeft;
-  const activeStep = Math.min(STEPS.length - 1, Math.floor((elapsed / COUNTDOWN_SECONDS) * STEPS.length));
-
   const fullUrl = preview?.sourceUrl ? normalizeUrl(preview.sourceUrl) : "";
   const displayUrl = preview?.sourceUrl ? truncateUrl(normalizeUrl(preview.sourceUrl)) : "";
-
-  const ringSize = 32;
-  const stroke = 5;
-  const radius = (ringSize - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (progress / 100) * circumference;
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
