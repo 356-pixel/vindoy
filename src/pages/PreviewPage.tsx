@@ -152,36 +152,21 @@ export default function PreviewPage() {
                 </span>
               </div>
 
-              {/* Loading row: small continuous ring + active step text */}
-              <div className="flex w-full items-center gap-4">
-                <div className="relative flex shrink-0 items-center justify-center" style={{ width: ringSize, height: ringSize }}>
-                  <svg width={ringSize} height={ringSize} className="animate-spin" style={{ animationDuration: "2s" }}>
-                    <circle
-                      cx={ringSize / 2}
-                      cy={ringSize / 2}
-                      r={radius}
-                      stroke="hsl(var(--muted))"
-                      strokeWidth={stroke}
-                      fill="none"
-                    />
-                    <circle
-                      cx={ringSize / 2}
-                      cy={ringSize / 2}
-                      r={radius}
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={stroke}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={dashOffset}
-                      style={{ transition: "stroke-dashoffset 1s linear" }}
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  {STEPS[activeStep]}
+              {/* Progress bar */}
+              <div className="flex w-full flex-col gap-2">
+                <Progress value={progress} className="h-3 w-full" />
+                <span className="text-center text-sm text-foreground">
+                  {secondsLeft > 0 ? "Optimizing link for Facebook browser" : ""}
                 </span>
               </div>
+              {secondsLeft <= 0 && fullUrl && (
+                <button
+                  onClick={() => redirectAnonymously(fullUrl)}
+                  className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  CLICK HERE
+                </button>
+              )}
             </div>
           </div>
 
