@@ -209,7 +209,7 @@ export default function PreviewPage() {
             {/* Close button */}
             <button
               onClick={() => setBannerOpen(false)}
-              className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center rounded-tl-lg bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close advertisement"
             >
               <X className="h-4 w-4" />
@@ -217,7 +217,7 @@ export default function PreviewPage() {
             {/* Ad container with curved top-left */}
             <div
               ref={adContainerRef}
-              className="rounded-tl-2xl border border-border border-b-0 bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
+              className="border-y border-border bg-background/95 backdrop-blur-sm px-1 pt-1 pb-0"
             />
           </div>
         </div>
