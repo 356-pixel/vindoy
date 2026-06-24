@@ -120,7 +120,10 @@ export default function PreviewPage() {
       <Progress value={progress} className="h-1 w-full rounded-none" />
 
       {/* Banner ad */}
-      <div className="flex w-full justify-center pt-8">
+      <div className="flex w-full flex-col items-center pt-8">
+        <span className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+          ADVERTISEMENT
+        </span>
         <a href="https://vindoy.com" target="_blank" rel="noopener noreferrer" aria-label="Advertisement">
           <img
             src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
