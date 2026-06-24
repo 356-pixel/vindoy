@@ -117,7 +117,6 @@ export default function PreviewPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
-      <Progress value={progress} className="h-1 w-full rounded-none" />
 
       {/* Banner ad */}
       <div className="flex w-full flex-col items-center pt-8">
