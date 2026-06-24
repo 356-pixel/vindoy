@@ -75,7 +75,6 @@ export default function PreviewPage() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           clearInterval(interval);
-          redirectAnonymously(target);
           return 0;
         }
         return s - 1;
