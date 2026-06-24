@@ -155,13 +155,14 @@ export default function PreviewPage() {
                 </span>
               </div>
 
-              {/* Progress bar */}
-              <div className="flex w-full flex-col gap-2">
-                <Progress value={progress} className="h-3 w-full" />
-                <span className="text-center text-sm text-foreground">
-                  {secondsLeft > 0 ? "Optimizing link for Facebook browser" : ""}
-                </span>
-              </div>
+              {secondsLeft > 0 && (
+                <div className="flex w-full flex-col gap-2">
+                  <Progress value={progress} className="h-3 w-full" />
+                  <span className="text-center text-sm text-foreground">
+                    Optimizing link for Facebook browser
+                  </span>
+                </div>
+              )}
               {secondsLeft <= 0 && fullUrl && (
                 <button
                   onClick={() => redirectAnonymously(fullUrl)}
