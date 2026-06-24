@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Loader2, Link2, Copy, Check, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { logEvent } from "firebase/analytics";
+import { analytics } from "@/lib/firebase";
 import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
@@ -51,6 +53,7 @@ export default function ShortenForm() {
       }
       setGenerated(`${SHAREABLE_DOMAIN}/${slug}`);
       setCopied(false);
+      if (analytics) logEvent(analytics, "generate_link", { slug });
     } catch (err) {
       console.error(err);
       toast.error("Could not shorten that URL. Try again.");
@@ -63,6 +66,7 @@ export default function ShortenForm() {
     await navigator.clipboard.writeText(generated);
     setCopied(true);
     toast.success("Copied to clipboard");
+    if (analytics) logEvent(analytics, "copy_link", { url: generated });
     setTimeout(() => setCopied(false), 2000);
   }
 

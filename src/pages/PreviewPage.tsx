@@ -2,6 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { logEvent } from "firebase/analytics";
+import { analytics } from "@/lib/firebase";
 import { getPreviewDoc } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { recordClick } from "@/lib/analytics";
@@ -75,6 +77,9 @@ export default function PreviewPage() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           clearInterval(interval);
+          if (analytics) {
+            logEvent(analytics, "countdown_complete", { slug });
+          }
           return 0;
         }
         return s - 1;
@@ -123,7 +128,15 @@ export default function PreviewPage() {
         <span className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">
           ADVERTISEMENT
         </span>
-        <a href="https://vindoy.com" target="_blank" rel="noopener noreferrer" aria-label="Advertisement">
+          <a
+            href="https://vindoy.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Advertisement"
+            onClick={() => {
+              if (analytics) logEvent(analytics, "banner_ad_click", { slug });
+            }}
+          >
           <img
             src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/banner.png?alt=media&token=27e2e692-9e2d-4859-bf2e-501104ee6239"
             alt="Advertisement"
@@ -164,7 +177,10 @@ export default function PreviewPage() {
               )}
               {secondsLeft <= 0 && fullUrl && (
                 <button
-                  onClick={() => redirectAnonymously(fullUrl)}
+                  onClick={() => {
+                    if (analytics) logEvent(analytics, "click_here", { slug });
+                    redirectAnonymously(fullUrl);
+                  }}
                   className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   CLICK HERE
@@ -186,7 +202,10 @@ export default function PreviewPage() {
           <div className="relative flex justify-center border-y border-border bg-background/95 backdrop-blur-sm pt-1 pb-0">
             {/* Close button */}
             <button
-              onClick={() => setBannerOpen(false)}
+              onClick={() => {
+                if (analytics) logEvent(analytics, "close_banner", { slug });
+                setBannerOpen(false);
+              }}
               className="absolute -top-6 right-0 z-10 flex h-7 w-10 items-center justify-center rounded-tl-lg bg-muted/90 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close advertisement"
             >
