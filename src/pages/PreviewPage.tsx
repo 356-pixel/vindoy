@@ -22,6 +22,7 @@ function redirectAnonymously(target: string) {
   form.action = target;
   form.method = "GET";
   form.setAttribute("rel", "noreferrer");
+  form.referrerPolicy = "no-referrer";
   document.body.appendChild(form);
   form.submit();
 }
