@@ -6,7 +6,7 @@ import { analytics } from "@/lib/firebase";
 import { createPreview, generateUniqueSlug } from "@/lib/previewsApi";
 import { placeholderDefaultArticle } from "@/lib/articleTypes";
 import { SHAREABLE_DOMAIN } from "@/lib/adminConfig";
-import { canonicalTrackingId, recordLinkGenerated } from "@/lib/analytics";
+import { canonicalTrackingId } from "@/lib/analytics";
 
 // 1x1 transparent gif — placeholder so backend image field is satisfied.
 const PLACEHOLDER_IMG =
@@ -45,12 +45,9 @@ export default function ShortenForm() {
         image: PLACEHOLDER_IMG,
         createdAt: new Date().toISOString(),
         default: placeholderDefaultArticle(url),
+        clicks: 0,
         ...(validTid ? { trackingId: validTid } : {}),
       });
-      if (validTid) {
-        // Fire-and-forget: analytics must never block link generation.
-        recordLinkGenerated(validTid, slug).catch((e) => console.warn("analytics:", e));
-      }
       setGenerated(`${SHAREABLE_DOMAIN}/${slug}`);
       setCopied(false);
       if (analytics) logEvent(analytics, "generate_link", { slug });

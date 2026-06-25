@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   orderBy,
   query,
   serverTimestamp,
@@ -12,6 +13,14 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Article, PreviewDoc } from "./articleTypes";
+
+export async function incrementPreviewClicks(slug: string): Promise<void> {
+  try {
+    await setDoc(doc(db, COL, slug), { clicks: increment(1) }, { merge: true });
+  } catch (e) {
+    console.warn("clicks:", e);
+  }
+}
 
 const COL = "previews";
 

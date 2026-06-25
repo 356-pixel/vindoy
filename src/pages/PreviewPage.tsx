@@ -4,9 +4,8 @@ import { ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { logEvent } from "firebase/analytics";
 import { analytics } from "@/lib/firebase";
-import { getPreviewDoc } from "@/lib/previewsApi";
+import { getPreviewDoc, incrementPreviewClicks } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
-import { recordClick } from "@/lib/analytics";
 
 const COUNTDOWN_SECONDS = 4;
 
@@ -49,8 +48,8 @@ export default function PreviewPage() {
         }
         setPreview(d);
         if (d.trackingId) {
-          // Fire-and-forget: never block the redirect on analytics.
-          recordClick(d.trackingId, d.slug).catch((e) => console.warn("analytics:", e));
+          // Fire-and-forget: increment click count directly on the preview doc.
+          incrementPreviewClicks(d.slug);
         }
       })
       .catch(() => {
