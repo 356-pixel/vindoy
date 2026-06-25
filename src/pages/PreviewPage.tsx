@@ -89,7 +89,7 @@ export default function PreviewPage() {
     const script = document.createElement("script");
     script.src =
       "https://pl29889870.effectivecpmnetwork.com/7d/88/87/7d88878d3713af19da3ade0ab15e75f2.js";
-    script.async = true;
+    script.referrerPolicy = "origin";
     document.body.appendChild(script);
 
     return () => {
