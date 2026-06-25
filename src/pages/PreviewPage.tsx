@@ -109,34 +109,25 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
-          {/* Article */}
-          <div className="w-full text-center text-sm text-muted-foreground leading-relaxed">
-            <h2 className="text-base font-semibold text-foreground mb-3">
-              Why don’t Twitter (X) video links work properly inside Facebook’s in-app browser?
-            </h2>
-            <p className="mb-3">
-              Twitter (X) video links often fail to play within Facebook’s in-app browser because of platform restrictions, browser compatibility limitations, and security policies that affect external media content. Users may encounter blank screens, loading errors, or playback issues, creating a frustrating experience when trying to watch shared videos directly from Facebook.
-            </p>
-            <p>
-              To overcome this problem, we use the{" "}
-              <a
-                href="https://vindoy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-primary"
-              >
-                Vindoy
-              </a>{" "}
-              URL shortener.{" "}
-              <a
-                href="https://vindoy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-primary"
-              >
-                Vindoy
-              </a>{" "}
-              creates a cleaner, more compatible redirect that helps open Twitter video links reliably across devices and browsers.
+          {/* Banner Ad */}
+          <div className="w-full flex flex-col items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              ADVERTISEMENT
+            </span>
+            <a
+              href="https://appsave.space/sl/85yd1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full block"
+            >
+              <img
+                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/Untitled23.jpeg?alt=media&token=58038f9d-c09b-42d5-9b76-3853aad29787"
+                alt="Advertisement"
+                className="w-full h-auto rounded-lg object-contain"
+              />
+            </a>
+            <p className="text-center text-xs text-muted-foreground">
+              Buksan ang kahon at sundin ang mga tagubilin upang manalo ng mga gantimpala!
             </p>
           </div>
 
