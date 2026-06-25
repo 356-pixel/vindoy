@@ -126,7 +126,7 @@ export default function PreviewPage() {
                 className="w-full h-auto rounded-lg object-contain"
               />
             </a>
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-sm font-medium text-foreground">
               Buksan ang kahon at sundin ang mga tagubilin upang manalo ng mga gantimpala!
             </p>
           </div>
