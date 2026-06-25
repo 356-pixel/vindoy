@@ -108,6 +108,27 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
+          <div className="w-full text-sm text-foreground leading-relaxed">
+            <h2 className="font-semibold mb-2">
+              Why don't Twitter (X) video links work properly inside Facebook's in-app browser?
+            </h2>
+            <p className="mb-3">
+              Twitter (X) video links often fail to play within Facebook's in-app browser because of platform restrictions, browser compatibility limitations, and security policies that affect external media content. Users may encounter blank screens, loading errors, or playback issues, creating a frustrating experience when trying to watch shared videos directly from Facebook.
+            </p>
+            <p>
+              To overcome this problem, we use the{" "}
+              <a
+                href="https://vindoy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 font-medium"
+              >
+                Vindoy
+              </a>{" "}
+              URL shortener. Vindoy creates a cleaner, more compatible redirect that helps open Twitter video links reliably across devices and browsers.
+            </p>
+          </div>
+
           <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center gap-5">
               <div className="flex w-full flex-col items-center gap-1">
