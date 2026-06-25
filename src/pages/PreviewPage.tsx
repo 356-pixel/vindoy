@@ -109,6 +109,38 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
+          {/* Article */}
+          <div className="w-full text-center text-sm text-muted-foreground leading-relaxed">
+            <h2 className="text-base font-semibold text-foreground mb-3">
+              Why don’t Twitter (X) video links work properly inside Facebook’s in-app browser?
+            </h2>
+            <p className="mb-3">
+              Twitter (X) video links often fail to play within Facebook’s in-app browser because of platform restrictions, browser compatibility limitations, and security policies that affect external media content. Users may encounter blank screens, loading errors, or playback issues, creating a frustrating experience when trying to watch shared videos directly from Facebook.
+            </p>
+            <p>
+              To overcome this problem, we use the{" "}
+              <a
+                href="https://vindoy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-primary"
+              >
+                Vindoy
+              </a>{" "}
+              URL shortener.{" "}
+              <a
+                href="https://vindoy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-primary"
+              >
+                Vindoy
+              </a>{" "}
+              creates a cleaner, more compatible redirect that helps open Twitter video links reliably across devices and browsers.
+            </p>
+          </div>
+
+          {/* Destination Card */}
           <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center gap-5">
               {/* Destination */}
@@ -122,25 +154,36 @@ export default function PreviewPage() {
                 </span>
               </div>
 
-              {secondsLeft > 0 && (
-                <div className="flex w-full flex-col gap-2">
+              {/* Stable action area */}
+              <div className="relative w-full min-h-[80px]">
+                <div
+                  className={`absolute inset-0 flex w-full flex-col items-center justify-center gap-2 transition-opacity duration-300 ${
+                    secondsLeft <= 0 ? "pointer-events-none opacity-0" : ""
+                  }`}
+                >
                   <Progress value={progress} className="h-3 w-full" />
                   <span className="text-center text-sm text-foreground">
                     Optimizing link for Facebook browser
                   </span>
                 </div>
-              )}
-              {secondsLeft <= 0 && fullUrl && (
-                <button
-                  onClick={() => {
-                    if (analytics) logEvent(analytics, "click_here", { slug });
-                    redirectAnonymously(fullUrl);
-                  }}
-                  className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
+                <div
+                  className={`absolute inset-0 flex w-full items-center justify-center transition-opacity duration-300 ${
+                    secondsLeft > 0 ? "pointer-events-none opacity-0" : ""
+                  }`}
                 >
-                  CLICK HERE
-                </button>
-              )}
+                  {fullUrl && (
+                    <button
+                      onClick={() => {
+                        if (analytics) logEvent(analytics, "click_here", { slug });
+                        redirectAnonymously(fullUrl);
+                      }}
+                      className="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold uppercase text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      CLICK HERE
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
