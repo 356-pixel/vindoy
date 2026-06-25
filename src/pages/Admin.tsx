@@ -13,16 +13,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ADMIN_PASSWORD, ALLOWED_TRACKING_IDS, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
-import {
-  fetchAllTrackingAnalytics,
-  filterAnalytics,
-  monthRange,
-  sumDays,
-  todayRange,
-  weekRange,
-  type TrackingAnalytics,
-} from "@/lib/analyticsApi";
-import { RETENTION_DAYS, utcDateString } from "@/lib/analytics";
+import { listPreviews } from "@/lib/previewsApi";
+import type { PreviewDoc } from "@/lib/articleTypes";
+import { utcDateString } from "@/lib/analytics";
 
 const SESSION_KEY = "vindoy_admin_auth";
 const MIN_CLICKS_OPTIONS = [100, 150, 200] as const;
@@ -100,12 +93,24 @@ function defaultFromDate(): string {
   return utcDateString(d);
 }
 
+function dateOnly(iso: string): string {
+  // createdAt is stored as ISO string. Use UTC date portion.
+  return iso ? iso.slice(0, 10) : "";
+}
+
+type DateRow = {
+  date: string;
+  qualifyingLinks: number;
+  totalClicks: number;
+  links: { slug: string; shortUrl: string; clicks: number; trackingId: string }[];
+};
+
 function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
   const [fromDate, setFromDate] = useState<string>(defaultFromDate());
   const [toDate, setToDate] = useState<string>(utcDateString());
   const [trackingFilter, setTrackingFilter] = useState<string>("");
   const [minClicks, setMinClicks] = useState<number>(100);
-  const [data, setData] = useState<TrackingAnalytics[]>([]);
+  const [data, setData] = useState<PreviewDoc[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [openRow, setOpenRow] = useState<string | null>(null);
@@ -114,7 +119,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setOpenRow(null);
     try {
-      const fresh = await fetchAllTrackingAnalytics();
+      const fresh = await listPreviews();
       setData(fresh);
       setFetched(true);
     } catch (e) {
@@ -125,69 +130,36 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  // Summary cards use full dataset (independent of filters).
-  const summaries = useMemo(() => {
-    const t = todayRange();
-    const w = weekRange();
-    const m = monthRange();
-    return {
-      today: sumDays(data, t.from, t.to),
-      week: sumDays(data, w.from, w.to),
-      month: sumDays(data, m.from, m.to),
-    };
-  }, [data]);
-
-  // Tracking dropdown: union of fetched IDs + admin allow-list.
   const trackingOptions = useMemo(() => {
-    const ids = data.map((d) => d.trackingId);
+    const ids = data.map((p) => p.trackingId).filter((x): x is string => !!x);
     return [...new Set([...ids, ...ALLOWED_TRACKING_IDS])].sort();
   }, [data]);
 
-  const filtered = useMemo(
-    () => filterAnalytics(data, fromDate, toDate, trackingFilter || undefined),
-    [data, fromDate, toDate, trackingFilter],
-  );
-
-  // Group by date (descending). For each date, count links that crossed minClicks
-  // and sum total clicks across those tracking IDs active that date.
-  type DateRow = {
-    date: string;
-    linksGenerated: number;
-    totalClicks: number;
-    links: { slug: string; shortUrl: string; clicks: number; trackingId: string }[];
-  };
-
   const dateRows: DateRow[] = useMemo(() => {
     const byDate = new Map<string, DateRow>();
-    for (const t of filtered) {
-      const qualifyingLinks = t.links.filter((l) => l.clicks >= minClicks);
-      if (qualifyingLinks.length === 0) continue;
-      for (const day of t.days) {
-        if (day.date < fromDate || day.date > toDate) continue;
-        if (!byDate.has(day.date)) {
-          byDate.set(day.date, { date: day.date, linksGenerated: 0, totalClicks: 0, links: [] });
-        }
-        const row = byDate.get(day.date)!;
-        row.totalClicks += day.clicks;
+    for (const p of data) {
+      if (!p.trackingId) continue;
+      if (trackingFilter && p.trackingId !== trackingFilter) continue;
+      const clicks = Number(p.clicks || 0);
+      if (clicks < minClicks) continue;
+      const date = dateOnly(p.createdAt);
+      if (!date) continue;
+      if (date < fromDate || date > toDate) continue;
+      if (!byDate.has(date)) {
+        byDate.set(date, { date, qualifyingLinks: 0, totalClicks: 0, links: [] });
       }
-      // Attach qualifying links to their most recent activity date within range.
-      const activityMs = Math.max(t.lastClickAt || 0, t.createdAt || 0);
-      if (!activityMs) continue;
-      const activityDate = new Date(activityMs).toISOString().slice(0, 10);
-      if (activityDate < fromDate || activityDate > toDate) continue;
-      if (!byDate.has(activityDate)) {
-        byDate.set(activityDate, { date: activityDate, linksGenerated: 0, totalClicks: 0, links: [] });
-      }
-      const target = byDate.get(activityDate)!;
-      target.linksGenerated += qualifyingLinks.length;
-      for (const l of qualifyingLinks) {
-        target.links.push({ ...l, trackingId: t.trackingId });
-      }
+      const row = byDate.get(date)!;
+      row.qualifyingLinks += 1;
+      row.totalClicks += clicks;
+      row.links.push({
+        slug: p.slug,
+        shortUrl: `${SHAREABLE_DOMAIN}/${p.slug}`,
+        clicks,
+        trackingId: p.trackingId,
+      });
     }
-    return [...byDate.values()]
-      .filter((r) => r.linksGenerated > 0)
-      .sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [filtered, fromDate, toDate, minClicks]);
+    return [...byDate.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+  }, [data, fromDate, toDate, trackingFilter, minClicks]);
 
   return (
     <>
@@ -195,7 +167,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
         <div>
           <h1 className="text-xl font-semibold">Analytics</h1>
           <p className="text-xs text-muted-foreground">
-            Real-time fetch · entries older than {RETENTION_DAYS} days are hidden
+            Real-time fetch from previews · click "Fetch Data" to refresh
           </p>
         </div>
         <button
@@ -205,13 +177,6 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
           <LogOut className="h-3.5 w-3.5" /> Logout
         </button>
       </header>
-
-      {/* SUMMARY CARDS */}
-      <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SummaryCard label="Today" links={summaries.today.links} clicks={summaries.today.clicks} accent="bg-primary/10 text-primary" />
-        <SummaryCard label="This week" links={summaries.week.links} clicks={summaries.week.clicks} accent="bg-secondary text-foreground" />
-        <SummaryCard label="This month" links={summaries.month.links} clicks={summaries.month.clicks} accent="bg-secondary text-foreground" />
-      </section>
 
       {/* FILTERS */}
       <section className="mb-5 rounded-xl border border-border bg-card p-4">
@@ -312,16 +277,16 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
                       className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
                     />
                     <span className="font-medium">{row.date}</span>
-                    <span className="text-right tabular-nums">{row.linksGenerated.toLocaleString()}</span>
+                    <span className="text-right tabular-nums">{row.qualifyingLinks.toLocaleString()}</span>
                     <span className="text-right tabular-nums font-semibold">{row.totalClicks.toLocaleString()}</span>
                   </button>
                   {open && (
                     <div className="border-t border-border bg-background/40 px-4 py-3">
                       <ul className="divide-y divide-border/60">
                         {sortedLinks.map((l) => {
-                          const url = l.shortUrl || `${SHAREABLE_DOMAIN}/${l.slug}`;
+                          const url = l.shortUrl;
                           return (
-                            <li key={`${l.trackingId}-${l.slug}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                            <li key={l.slug} className="flex items-center justify-between gap-3 py-2 text-sm">
                               <a
                                 href={url}
                                 target="_blank"
@@ -349,23 +314,5 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
         )}
       </section>
     </>
-  );
-}
-
-function SummaryCard({ label, links, clicks, accent }: { label: string; links: number; clicks: number; accent: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className={`mb-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent}`}>{label}</div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Links generated</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{links.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Total clicks</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{clicks.toLocaleString()}</p>
-        </div>
-      </div>
-    </div>
   );
 }
