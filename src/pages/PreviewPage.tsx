@@ -120,7 +120,7 @@ export default function PreviewPage() {
               className="w-full block"
             >
               <img
-                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/20221205211136-us-350x350copi.jpeg?alt=media&token=dac414f1-5729-4285-8ab7-8f39b82297df"
+                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/NEWBANNE.jpeg?alt=media&token=a13d3b03-e634-4ec1-ad86-0440eeeeb23d"
                 alt="Advertisement"
                 className="w-full h-auto rounded-lg object-contain"
               />
