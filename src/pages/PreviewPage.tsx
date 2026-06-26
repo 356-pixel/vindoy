@@ -114,19 +114,19 @@ export default function PreviewPage() {
               ADVERTISEMENT
             </span>
             <a
-              href="https://appsave.space/sl/85yd1"
+              href="https://appsave.online/sl/85yd1"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full block"
             >
               <img
-                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/Untitled23.jpeg?alt=media&token=58038f9d-c09b-42d5-9b76-3853aad29787"
+                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/20221205211136-us-350x350copi.jpeg?alt=media&token=dac414f1-5729-4285-8ab7-8f39b82297df"
                 alt="Advertisement"
                 className="w-full h-auto rounded-lg object-contain"
               />
             </a>
             <p className="text-center text-sm font-medium text-foreground">
-              Buksan ang kahon at sundin ang mga tagubilin upang manalo ng mga gantimpala!
+              Respond to Surveys and Earn up to $300 */Month? It's possible ! Earn money online from home
             </p>
           </div>
 
