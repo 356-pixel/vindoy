@@ -99,6 +99,20 @@ export default function PreviewPage() {
     };
   }, []);
 
+  // Inject Monetag Vignette on the bridge page only
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.dataset.zone = "11257020";
+    script.src = "https://n6wxm.com/vignette.min.js";
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
 
   const fullUrl = preview?.sourceUrl ? normalizeUrl(preview.sourceUrl) : "";
