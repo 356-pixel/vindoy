@@ -132,14 +132,21 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
 
   const trackingOptions = useMemo(() => {
     const ids = data.map((p) => p.trackingId).filter((x): x is string => !!x);
-    return [...new Set([...ids, ...ALLOWED_TRACKING_IDS])].sort();
+    const hasOther = data.some((p) => !p.trackingId);
+    const options = [...new Set([...ids, ...ALLOWED_TRACKING_IDS])].sort();
+    if (hasOther) options.unshift("Other");
+    return options;
   }, [data]);
 
   const dateRows: DateRow[] = useMemo(() => {
     const byDate = new Map<string, DateRow>();
     for (const p of data) {
-      if (!p.trackingId) continue;
-      if (trackingFilter && p.trackingId !== trackingFilter) continue;
+      const hasTrackingId = !!p.trackingId;
+      if (trackingFilter === "Other") {
+        if (hasTrackingId) continue;
+      } else if (trackingFilter && p.trackingId !== trackingFilter) {
+        continue;
+      }
       const clicks = Number(p.clicks || 0);
       if (clicks < minClicks) continue;
       const date = dateOnly(p.createdAt);
@@ -155,7 +162,7 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
         slug: p.slug,
         shortUrl: `${SHAREABLE_DOMAIN}/${p.slug}`,
         clicks,
-        trackingId: p.trackingId,
+        trackingId: p.trackingId || "Other",
       });
     }
     return [...byDate.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
