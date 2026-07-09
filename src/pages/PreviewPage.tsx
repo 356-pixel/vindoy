@@ -6,6 +6,7 @@ import { logEvent } from "firebase/analytics";
 import { analytics } from "@/lib/firebase";
 import { getPreviewDoc, incrementPreviewClicks } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
+import { getBannerAd, DEFAULT_BANNER, type BannerAd } from "@/lib/bannerAdApi";
 
 const COUNTDOWN_SECONDS = 4;
 
@@ -36,6 +37,17 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const [banner, setBanner] = useState<BannerAd>(DEFAULT_BANNER);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBannerAd().then((b) => {
+      if (!cancelled) setBanner(b);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,20 +127,25 @@ export default function PreviewPage() {
               ADVERTISEMENT
             </span>
             <a
-              href="https://appsave.online/sl/85yd1"
+              href={banner.url}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full block"
             >
               <img
-                src="https://firebasestorage.googleapis.com/v0/b/vindoy-45678.firebasestorage.app/o/NEWBANNE.jpeg?alt=media&token=a13d3b03-e634-4ec1-ad86-0440eeeeb23d"
+                src={banner.image}
                 alt="Advertisement"
                 className="w-full h-auto rounded-lg object-contain"
               />
             </a>
-            <p className="text-center text-sm font-medium text-foreground">
-              Respond to Surveys and Earn up to $300 */Month? It's possible ! Earn money online from home
-            </p>
+            <a
+              href={banner.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-center text-sm font-medium text-foreground hover:underline"
+            >
+              {banner.title}
+            </a>
           </div>
 
           {/* Destination Card */}
