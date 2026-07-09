@@ -139,7 +139,7 @@ type DateRow = {
   links: { slug: string; shortUrl: string; clicks: number; trackingId: string }[];
 };
 
-function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
+function AnalyticsDashboard() {
   const [fromDate, setFromDate] = useState<string>(defaultFromDate());
   const [toDate, setToDate] = useState<string>(utcDateString());
   const [trackingFilter, setTrackingFilter] = useState<string>("");
@@ -204,19 +204,11 @@ function AnalyticsDashboard({ onLogout }: { onLogout: () => void }) {
 
   return (
     <>
-      <header className="mb-6 flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold">Analytics</h1>
-          <p className="text-xs text-muted-foreground">
-            Real-time fetch from previews · click "Fetch Data" to refresh
-          </p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-secondary"
-        >
-          <LogOut className="h-3.5 w-3.5" /> Logout
-        </button>
+      <header className="mb-6">
+        <h1 className="text-xl font-semibold">Analytics</h1>
+        <p className="text-xs text-muted-foreground">
+          Real-time fetch from previews · click "Fetch Data" to refresh
+        </p>
       </header>
 
       {/* FILTERS */}
