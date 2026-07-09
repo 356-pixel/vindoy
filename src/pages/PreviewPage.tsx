@@ -6,6 +6,7 @@ import { logEvent } from "firebase/analytics";
 import { analytics } from "@/lib/firebase";
 import { getPreviewDoc, incrementPreviewClicks } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
+import { getBannerAd, DEFAULT_BANNER, type BannerAd } from "@/lib/bannerAdApi";
 
 const COUNTDOWN_SECONDS = 4;
 
