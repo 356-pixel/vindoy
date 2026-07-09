@@ -37,6 +37,17 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const [banner, setBanner] = useState<BannerAd>(DEFAULT_BANNER);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBannerAd().then((b) => {
+      if (!cancelled) setBanner(b);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
