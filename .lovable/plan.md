@@ -1,41 +1,77 @@
-## Why the post is failing
+## What needs to change
 
-Almost certainly yes — this is a Firestore Security Rules issue, not a code bug. The `BannerAdManager` writes to `config/bannerAd` via `setDoc()`, but your Firestore project has no rule that allows public writes to the `config` collection. The Admin dashboard is protected only by a client-side password (`sessionStorage`), so Firebase itself sees the request as an unauthenticated write and rejects it. The other collections you already use (like `videos` / `previews`) presumably have their own permissive rules, which is why those work.
+**Firestore rules:** yes — add a block for `config/bannerAd`. Your current rules have no match for the `config` collection, so writes (and reads) are denied by default. That's why Post Ads fails.
 
-## Plan to fix
+**Storage rules:** no changes. The banner image is stored as a base64 data URL inside the Firestore document (compressed to ~40 KB), not uploaded to Firebase Storage, so the existing storage rules are irrelevant here.
 
-1. **Add a `firestore.rules` file** to the repo so the rules live in source control alongside the app.
-2. **Allow reads for everyone** on `config/bannerAd` (preview pages need it) and **allow writes** so the admin dashboard can update it. Since there is no Firebase Auth in the project, the write rule will be open at the Firestore level — the admin password gate stays as the app-level guard (same security posture you already have for the rest of the admin actions).
-3. **Wire the rules file into `firebase.json`** under a `"firestore"` block so `firebase deploy --only firestore:rules` picks it up.
-4. **Preserve existing rules** for other collections (`videos`, `previews`, etc.) by including a catch-all that keeps them working exactly as they do today. If you'd rather I mirror your current live rules exactly, share them and I'll drop them in verbatim.
-5. **You deploy the rules** once with `firebase deploy --only firestore:rules` (or paste them into the Firebase Console → Firestore → Rules). Lovable can't push rules to Firebase for you.
+## Updated Firestore rules to paste into Firebase Console
 
-### Rules that will be written (technical detail)
+Add this block inside `match /databases/{database}/documents { ... }`, alongside the existing collections:
+
+```text
+match /config/{docId} {
+  allow read: if true;
+  allow write: if true;
+}
+```
+
+Full file with the addition in place:
 
 ```text
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Banner ad config — public read, open write (admin gated in-app by password)
-    match /config/bannerAd {
+    match /videos/{videoId} {
+      allow read, write: if true;
+    }
+    match /previews/{previewId} {
+      allow read, write: if true;
+    }
+    match /articles/{articleId} {
+      allow read, write: if true;
+    }
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+    match /config/{docId} {
       allow read: if true;
       allow write: if true;
     }
-
-    // Keep your other collections working as they do today
-    match /{document=**} {
-      allow read, write: if true;  // placeholder — replace with your current rules
+    match /tracking_analytics/{tid} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.totalClicks >= resource.data.totalClicks
+        && request.resource.data.totalLinksGenerated >= resource.data.totalLinksGenerated
+        && (request.resource.data.totalClicks - resource.data.totalClicks) <= 2
+        && (request.resource.data.totalLinksGenerated - resource.data.totalLinksGenerated) <= 2;
+    }
+    match /tracking_analytics/{tid}/links/{slug} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.clicks >= resource.data.clicks
+        && (request.resource.data.clicks - resource.data.clicks) <= 2;
+    }
+    match /tracking_analytics/{tid}/days/{date} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.clicks >= resource.data.clicks
+        && request.resource.data.linksGenerated >= resource.data.linksGenerated
+        && (request.resource.data.clicks - resource.data.clicks) <= 2
+        && (request.resource.data.linksGenerated - resource.data.linksGenerated) <= 2;
     }
   }
 }
 ```
 
-## Alternative worth considering
+## Sync the repo's `firestore.rules`
 
-If you want the write to be truly protected at the database layer (not just behind a client password), the better long-term fix is to add Firebase Auth for the admin user and gate the write rule on `request.auth.uid`. Let me know if you want that instead — it's a bigger change (login flow, auth state, one admin account) but properly secure.
+I'll also replace the placeholder `firestore.rules` I added earlier with your real ruleset (including the new `config` block) so the repo matches the live rules and future `firebase deploy --only firestore:rules` deploys don't wipe anything out.
 
-## Verification after deploy
+## Steps
 
-- Open Admin → Banner Ads, upload an image, click **Post Ads** → toast should say "Banner ad updated on preview pages".
-- Open any preview page → new banner + title + destination link render.
-- If it still fails, check the browser console for the exact Firestore error (`permission-denied` confirms it's still a rules issue; anything else points elsewhere).
+1. Update `firestore.rules` in the repo with the full ruleset above.
+2. You paste the same rules into Firebase Console → Firestore → Rules → Publish (or run `firebase deploy --only firestore:rules`).
+3. Retry Post Ads in the admin dashboard — it should succeed and preview pages should render the new banner.
