@@ -10,32 +10,66 @@ import {
   MousePointerClick,
   Link as LinkIcon,
   Download,
+  BarChart3,
+  ImagePlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ADMIN_PASSWORD, ALLOWED_TRACKING_IDS, SHAREABLE_DOMAIN } from "@/lib/adminConfig";
 import { listPreviews } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
 import { utcDateString } from "@/lib/analytics";
+import BannerAdManager from "@/components/BannerAdManager";
 
 const SESSION_KEY = "vindoy_admin_auth";
 const MIN_CLICKS_OPTIONS = [100, 150, 200] as const;
+
+type TabId = "analytics" | "banner";
 
 export default function Admin() {
   const [authed, setAuthed] = useState<boolean>(() => {
     try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch { return false; }
   });
+  const [tab, setTab] = useState<TabId>("analytics");
 
   return (
     <Layout>
       <SEO title="Admin · Vindoy" />
       <div className="container max-w-6xl py-8">
         {authed ? (
-          <AnalyticsDashboard
-            onLogout={() => {
-              try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
-              setAuthed(false);
-            }}
-          />
+          <>
+            <nav className="mb-6 flex flex-wrap items-center gap-1 border-b border-border">
+              {[
+                { id: "analytics" as const, label: "Analytics", icon: BarChart3 },
+                { id: "banner" as const, label: "Banner Ads", icon: ImagePlus },
+              ].map(({ id, label, icon: Icon }) => {
+                const active = tab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    className={`inline-flex items-center gap-1.5 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                      active
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => {
+                  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+                  setAuthed(false);
+                }}
+                className="ml-auto mb-2 inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:bg-secondary"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Logout
+              </button>
+            </nav>
+            {tab === "analytics" ? <AnalyticsDashboard /> : <BannerAdManager />}
+          </>
         ) : (
           <LoginGate onSuccess={() => {
             try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
