@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Banner ad config — public read, open write (admin is gated in-app by password)
+    match /config/bannerAd {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Existing collections keep working as before
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
