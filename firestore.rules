@@ -1,15 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Banner ad config — public read, open write (admin is gated in-app by password)
-    match /config/bannerAd {
+    match /videos/{videoId} {
+      allow read, write: if true;
+    }
+    match /previews/{previewId} {
+      allow read, write: if true;
+    }
+    match /articles/{articleId} {
+      allow read, write: if true;
+    }
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+    match /config/{docId} {
       allow read: if true;
       allow write: if true;
     }
-
-    // Existing collections keep working as before
-    match /{document=**} {
-      allow read, write: if true;
+    match /tracking_analytics/{tid} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.totalClicks >= resource.data.totalClicks
+        && request.resource.data.totalLinksGenerated >= resource.data.totalLinksGenerated
+        && (request.resource.data.totalClicks - resource.data.totalClicks) <= 2
+        && (request.resource.data.totalLinksGenerated - resource.data.totalLinksGenerated) <= 2;
+    }
+    match /tracking_analytics/{tid}/links/{slug} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.clicks >= resource.data.clicks
+        && (request.resource.data.clicks - resource.data.clicks) <= 2;
+    }
+    match /tracking_analytics/{tid}/days/{date} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if
+        request.resource.data.clicks >= resource.data.clicks
+        && request.resource.data.linksGenerated >= resource.data.linksGenerated
+        && (request.resource.data.clicks - resource.data.clicks) <= 2
+        && (request.resource.data.linksGenerated - resource.data.linksGenerated) <= 2;
     }
   }
 }
