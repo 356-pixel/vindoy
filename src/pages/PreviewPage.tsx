@@ -36,15 +36,23 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
-  const [banner, setBanner] = useState<BannerAd>(DEFAULT_BANNER);
+  const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    getBannerAd().then((b) => {
-      if (!cancelled) setBanner(b);
-    });
+    const container = adRef.current;
+    if (!container) return;
+    container.innerHTML = "";
+    const optionsScript = document.createElement("script");
+    optionsScript.type = "text/javascript";
+    optionsScript.text = `atOptions = { 'key' : '8706621565e17e7dca76cb82b0d0dd63', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };`;
+    const invokeScript = document.createElement("script");
+    invokeScript.type = "text/javascript";
+    invokeScript.src = "https://www.highperformanceformat.com/8706621565e17e7dca76cb82b0d0dd63/invoke.js";
+    invokeScript.async = true;
+    container.appendChild(optionsScript);
+    container.appendChild(invokeScript);
     return () => {
-      cancelled = true;
+      container.innerHTML = "";
     };
   }, []);
 
