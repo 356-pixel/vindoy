@@ -96,20 +96,6 @@ export default function PreviewPage() {
     return () => clearInterval(interval);
   }, [preview, navigate]);
 
-  // Inject Adsterra social bar on the bridge page only
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src =
-      "https://pl29889870.effectivecpmnetwork.com/7d/88/87/7d88878d3713af19da3ade0ab15e75f2.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
 
 
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
