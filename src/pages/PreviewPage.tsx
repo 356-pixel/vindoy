@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { logEvent } from "firebase/analytics";
 import { analytics } from "@/lib/firebase";
 import { getPreviewDoc, incrementPreviewClicks } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
+import { getBannerAd, DEFAULT_BANNER, type BannerAd } from "@/lib/bannerAdApi";
 
 const COUNTDOWN_SECONDS = 4;
 
@@ -36,23 +37,15 @@ export default function PreviewPage() {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<PreviewDoc | null | undefined>(undefined);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
-  const adRef = useRef<HTMLDivElement>(null);
+  const [banner, setBanner] = useState<BannerAd>(DEFAULT_BANNER);
 
   useEffect(() => {
-    const container = adRef.current;
-    if (!container) return;
-    container.innerHTML = "";
-    const optionsScript = document.createElement("script");
-    optionsScript.type = "text/javascript";
-    optionsScript.text = `atOptions = { 'key' : '8706621565e17e7dca76cb82b0d0dd63', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };`;
-    const invokeScript = document.createElement("script");
-    invokeScript.type = "text/javascript";
-    invokeScript.src = "https://www.highperformanceformat.com/8706621565e17e7dca76cb82b0d0dd63/invoke.js";
-    invokeScript.async = true;
-    container.appendChild(optionsScript);
-    container.appendChild(invokeScript);
+    let cancelled = false;
+    getBannerAd().then((b) => {
+      if (!cancelled) setBanner(b);
+    });
     return () => {
-      container.innerHTML = "";
+      cancelled = true;
     };
   }, []);
 
@@ -103,6 +96,20 @@ export default function PreviewPage() {
     return () => clearInterval(interval);
   }, [preview, navigate]);
 
+  // Inject Adsterra social bar on the bridge page only
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src =
+      "https://pl29889870.effectivecpmnetwork.com/7d/88/87/7d88878d3713af19da3ade0ab15e75f2.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
 
 
   const progress = ((COUNTDOWN_SECONDS - secondsLeft) / COUNTDOWN_SECONDS) * 100;
@@ -114,16 +121,31 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
-          {/* Adsterra Banner Ad 300x250 */}
+          {/* Banner Ad */}
           <div className="w-full flex flex-col items-center gap-2">
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               ADVERTISEMENT
             </span>
-            <div
-              ref={adRef}
-              className="flex items-center justify-center"
-              style={{ width: 300, height: 250 }}
-            />
+            <a
+              href={banner.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full block"
+            >
+              <img
+                src={banner.image}
+                alt="Advertisement"
+                className="w-full h-auto rounded-lg object-contain"
+              />
+            </a>
+            <a
+              href={banner.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-center text-sm font-medium text-foreground hover:underline"
+            >
+              {banner.title}
+            </a>
           </div>
 
           {/* Destination Card */}
