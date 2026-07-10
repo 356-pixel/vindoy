@@ -120,7 +120,7 @@ export default function PreviewPage() {
   return (
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-20">
-        <div className="flex w-full max-w-md flex-col items-center gap-5">
+        <div className="flex w-full max-w-md flex-col items-center gap-6">
           {/* Banner Ad */}
           <div className="w-full flex flex-col items-center gap-2">
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
