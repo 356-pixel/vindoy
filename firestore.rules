@@ -13,6 +13,10 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read, write: if true;
     }
+
+    match /bannerAds/{docId} {
+      allow read, write: if true;
+    }
     match /config/{docId} {
       allow read: if true;
       allow write: if true;
