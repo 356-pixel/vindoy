@@ -1,12 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { logEvent } from "firebase/analytics";
 import { analytics } from "@/lib/firebase";
 import { getPreviewDoc, incrementPreviewClicks } from "@/lib/previewsApi";
 import type { PreviewDoc } from "@/lib/articleTypes";
-import { getBannerAd, DEFAULT_BANNER, type BannerAd } from "@/lib/bannerAdApi";
 
 const COUNTDOWN_SECONDS = 4;
 
