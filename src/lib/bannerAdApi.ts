@@ -8,8 +8,8 @@ export type BannerAd = {
   updatedAt?: string;
 };
 
-const CONFIG_COL = "config";
-const BANNER_DOC = "bannerAd";
+const BANNER_ADS_COL = "bannerAds";
+const BANNER_DOC = "default";
 
 export const DEFAULT_BANNER: BannerAd = {
   image:
