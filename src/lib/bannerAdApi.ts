@@ -21,7 +21,7 @@ export const DEFAULT_BANNER: BannerAd = {
 
 export async function getBannerAd(): Promise<BannerAd> {
   try {
-    const snap = await getDoc(doc(db, CONFIG_COL, BANNER_DOC));
+    const snap = await getDoc(doc(db, BANNER_ADS_COL, BANNER_DOC));
     if (snap.exists()) {
       const data = snap.data() as Partial<BannerAd>;
       return {
@@ -39,7 +39,7 @@ export async function getBannerAd(): Promise<BannerAd> {
 
 export async function saveBannerAd(ad: BannerAd): Promise<void> {
   await setDoc(
-    doc(db, CONFIG_COL, BANNER_DOC),
+    doc(db, BANNER_ADS_COL, BANNER_DOC),
     { ...ad, updatedAt: new Date().toISOString(), _ts: serverTimestamp() },
     { merge: true },
   );
