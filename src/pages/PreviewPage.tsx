@@ -114,31 +114,16 @@ export default function PreviewPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-20">
         <div className="flex w-full max-w-md flex-col items-center gap-5">
-          {/* Banner Ad */}
+          {/* Adsterra Banner Ad 300x250 */}
           <div className="w-full flex flex-col items-center gap-2">
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               ADVERTISEMENT
             </span>
-            <a
-              href={banner.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full block"
-            >
-              <img
-                src={banner.image}
-                alt="Advertisement"
-                className="w-full h-auto rounded-lg object-contain"
-              />
-            </a>
-            <a
-              href={banner.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-center text-sm font-medium text-foreground hover:underline"
-            >
-              {banner.title}
-            </a>
+            <div
+              ref={adRef}
+              className="flex items-center justify-center"
+              style={{ width: 300, height: 250 }}
+            />
           </div>
 
           {/* Destination Card */}
